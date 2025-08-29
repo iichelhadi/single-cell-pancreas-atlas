@@ -1,0 +1,11 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+renv/library/
+.Renviron
+.DS_Store
+*.html
+*.pdf
+*.rds
+data/*    # keep raw/processed out of the repo; ship via v-drive/DOI instead
