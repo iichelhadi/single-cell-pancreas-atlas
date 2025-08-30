@@ -1,7 +1,7 @@
 ###############################################################################
 # Project: scRNA beta cell atlas — Lineage 2 reintegration and Figure 4 suite
 # File: Figure4_FigureS6.R
-# Author: <your name>
+# Author: Elhadi Iich
 # Date: 2025-08-27
 #
 # Description:
@@ -12,8 +12,8 @@
 #   metadata associations.
 #
 # Inputs:
-#   - 20250805_lin2.beta.reintegrated.rds
-#   - 20250624_cds_lin2.rds
+#   - lin2.beta.reintegrated.rds
+#   - cds_lin2.rds
 #   - slingshot_sim_lin2.rds
 #   - Beta_T2D_lineage2_1.rds, Beta_T2D_lineage2_2.rds
 #   - Lineage2_sling_perc_expr.tsv

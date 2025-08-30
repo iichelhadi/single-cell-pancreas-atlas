@@ -1,5 +1,9 @@
 ###############################################################################
-# Script: lin2C5_SCENIC_regulon_RIS_plot.R
+# Project: Pancreas scRNA atlas — Static MI Network and Hypergraph Modules
+# File: Figure7E_FIgureS9E.R
+# Author: Elhadi Iich
+# Date: 2025-08-29
+#
 # Purpose:
 #   - Load SCENIC regulon AUCs and regulonTargetsInfo
 #   - Build TF→target graph weighted by NES
@@ -7,9 +11,6 @@
 #     Regulon Importance Score (RIS)
 #   - Visualize the GRN highlighting high-confidence TFs and high-RIS hubs
 #
-# Notes:
-#   * Original logic preserved verbatim. Only comments/headers added.
-#   * Paths are unchanged and point to your HPC directories.
 ###############################################################################
 
 suppressPackageStartupMessages({
