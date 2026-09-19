@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -P YOUR_PROJECT_CODE
+#PBS -P xxxxx
 #PBS -j oe
 #PBS -N pyscenic_ctx_aucell
 #PBS -q super
@@ -12,25 +12,17 @@ cd $PBS_O_WORKDIR
 exec > >(tee -a "${PBS_O_WORKDIR}/detailed_${PBS_JOBID}.log") 2>&1
 echo "Job started at $(date) on node $(hostname). PBS_JOBID: ${PBS_JOBID}"
 
-# FIXED v2: original template had "###PBS -P ..." (triple-hash) which PBS
-# reads as a plain comment, not a directive — the scheduler silently ignored
-# your project/billing allocation. Now a real directive at the top; put your
-# actual Duke-NUS project/WBS code in place of YOUR_PROJECT_CODE before
-# submitting, or qsub will likely reject the job or bill the wrong account.
-
 source /etc/profile.d/modules.sh
 eval "$(conda shell.bash hook)"
-conda activate arboreto   #! confirm this env actually has pyscenic + matching
-                          #! ctxcore version: `which pyscenic && pyscenic --version`
-                          #! `python -c "import pyscenic, ctxcore; print(pyscenic.__version__, ctxcore.__version__)"`
-
+conda activate arboreto
+   
 ###############################################################################
 # EDIT THESE PATHS to your actual pancreas atlas files before submitting.
 ###############################################################################
 EXPR_MATRIX="${PBS_O_WORKDIR}/expression_matrix.csv"
-FEATHER_500BP="/data/jchan/home/gmsv2524/Indices/SCENIC/hg38/hg38__refseq-r80__500bp_up_and_100bp_down_tss.mc9nr.genes_vs_motifs.rankings.feather"
-FEATHER_10KB="/data/jchan/home/gmsv2524/Indices/SCENIC/hg38/hg38__refseq-r80__10kb_up_and_down_tss.mc9nr.genes_vs_motifs.rankings.feather"
-ANNOT="/data/jchan/home/gmsv2524/Indices/SCENIC/hg38/motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl"
+FEATHER_500BP="./Indices/SCENIC/hg38/hg38__refseq-r80__500bp_up_and_100bp_down_tss.mc9nr.genes_vs_motifs.rankings.feather"
+FEATHER_10KB="./Indices/SCENIC/hg38/hg38__refseq-r80__10kb_up_and_down_tss.mc9nr.genes_vs_motifs.rankings.feather"
+ANNOT="./Indices/SCENIC/hg38/motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl"
 CONSENSUS_DIR="revision_out"
 
 ###############################################################################
@@ -68,10 +60,8 @@ for PCT in 50 70 80; do
 done
 
 ###############################################################################
-# Conda/Python environment + reference database snapshot — same job.
-# md5sums matter here specifically because this run uses hg38 cisTarget
-# resources, replacing the old hg19 run; a reviewer or future-you needs to
-# know exactly which database files produced these results.
+# Record the software environment and reference database checksums used for
+# the pySCENIC analysis.
 ###############################################################################
 conda list --explicit > "${CONSENSUS_DIR}/pyscenic_conda_explicit.txt"
 conda env export --no-builds > "${CONSENSUS_DIR}/pyscenic_environment.yml"
