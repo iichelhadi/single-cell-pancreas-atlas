@@ -1,0 +1,82 @@
+#!/bin/bash
+#PBS -P YOUR_PROJECT_CODE
+#PBS -j oe
+#PBS -N pyscenic_ctx_aucell
+#PBS -q super
+#PBS -l select=1:ncpus=16:mem=240gb
+#PBS -l walltime=360:00:00
+#PBS -o ${PBS_O_WORKDIR}/RNA_${PBS_JOBID}.out.log
+#PBS -e ${PBS_O_WORKDIR}/RNA_${PBS_JOBID}.err.log
+set -e -x
+cd $PBS_O_WORKDIR
+exec > >(tee -a "${PBS_O_WORKDIR}/detailed_${PBS_JOBID}.log") 2>&1
+echo "Job started at $(date) on node $(hostname). PBS_JOBID: ${PBS_JOBID}"
+
+# FIXED v2: original template had "###PBS -P ..." (triple-hash) which PBS
+# reads as a plain comment, not a directive — the scheduler silently ignored
+# your project/billing allocation. Now a real directive at the top; put your
+# actual Duke-NUS project/WBS code in place of YOUR_PROJECT_CODE before
+# submitting, or qsub will likely reject the job or bill the wrong account.
+
+source /etc/profile.d/modules.sh
+eval "$(conda shell.bash hook)"
+conda activate arboreto   #! confirm this env actually has pyscenic + matching
+                          #! ctxcore version: `which pyscenic && pyscenic --version`
+                          #! `python -c "import pyscenic, ctxcore; print(pyscenic.__version__, ctxcore.__version__)"`
+
+###############################################################################
+# EDIT THESE PATHS to your actual pancreas atlas files before submitting.
+###############################################################################
+EXPR_MATRIX="${PBS_O_WORKDIR}/expression_matrix.csv"
+FEATHER_500BP="/data/jchan/home/gmsv2524/Indices/SCENIC/hg38/hg38__refseq-r80__500bp_up_and_100bp_down_tss.mc9nr.genes_vs_motifs.rankings.feather"
+FEATHER_10KB="/data/jchan/home/gmsv2524/Indices/SCENIC/hg38/hg38__refseq-r80__10kb_up_and_down_tss.mc9nr.genes_vs_motifs.rankings.feather"
+ANNOT="/data/jchan/home/gmsv2524/Indices/SCENIC/hg38/motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl"
+CONSENSUS_DIR="revision_out"
+
+###############################################################################
+# Run ctx + aucell for each consensus threshold (50/70/80%).
+###############################################################################
+for PCT in 50 70 80; do
+  GRN_FILE="${CONSENSUS_DIR}/consensus_grn_${PCT}.tsv"
+  REGULONS_OUT="${CONSENSUS_DIR}/regulons_consensus${PCT}.csv"
+  LOOM_OUT="${CONSENSUS_DIR}/scenic_consensus${PCT}.loom"
+
+  if [ ! -f "$GRN_FILE" ]; then
+    echo "MISSING: $GRN_FILE — run build_consensus_pyscenic_v2.R first. Skipping ${PCT}%."
+    continue
+  fi
+
+  echo "=== ctx: ${PCT}% consensus ==="
+  pyscenic ctx \
+    "$GRN_FILE" \
+    "$FEATHER_500BP" \
+    "$FEATHER_10KB" \
+    --annotations_fname "$ANNOT" \
+    --expression_mtx_fname "$EXPR_MATRIX" \
+    --mode custom_multiprocessing \
+    --num_workers 16 \
+    --output "$REGULONS_OUT"
+
+  echo "=== aucell: ${PCT}% consensus ==="
+  pyscenic aucell \
+    "$EXPR_MATRIX" \
+    "$REGULONS_OUT" \
+    --output "$LOOM_OUT" \
+    --num_workers 16
+
+  echo "=== ${PCT}% done: $LOOM_OUT ==="
+done
+
+###############################################################################
+# Conda/Python environment + reference database snapshot — same job.
+# md5sums matter here specifically because this run uses hg38 cisTarget
+# resources, replacing the old hg19 run; a reviewer or future-you needs to
+# know exactly which database files produced these results.
+###############################################################################
+conda list --explicit > "${CONSENSUS_DIR}/pyscenic_conda_explicit.txt"
+conda env export --no-builds > "${CONSENSUS_DIR}/pyscenic_environment.yml"
+pyscenic --version > "${CONSENSUS_DIR}/pyscenic_version.txt" 2>&1 || true
+python --version > "${CONSENSUS_DIR}/python_version.txt" 2>&1
+md5sum "$FEATHER_500BP" "$FEATHER_10KB" "$ANNOT" > "${CONSENSUS_DIR}/pyscenic_reference_md5.txt"
+
+echo "Job finished at $(date)"

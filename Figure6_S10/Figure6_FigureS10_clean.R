@@ -1,13 +1,13 @@
 ###############################################################################
-# Project: scRNA beta cell atlas — Lineage 3 (Figures 6B–6J, S8A–S8H)
-# File: Figure6_FigureS8.R
+# Project: scRNA beta cell atlas — Lineage 3 (Figures 6B–6J, S10A–S10G)
+# File: Figure6_FigureS10.R
 # Author: Elhadi Iich
-# Date: 2025-08-27
+# Date: 2026-09-10
 #
 # Description:
-#   Generates Lineage 3 figures and analyses (Monocle3, Slingshot, DESeq2, GSEA,
-#   ComplexHeatmap). This version preserves the original code verbatim.
-#   Only section banners and comments were added for clarity on GitHub.
+#   Generates Lineage 3 figures and analyses using Monocle3, Slingshot,
+#   DESeq2, GSEA and ComplexHeatmap, with revised donor-level analyses
+#   and source-data export for the revised manuscript.
 #
 # Inputs (as used in the script):
 #   - lin3.beta.reintegrated.rds
@@ -30,25 +30,25 @@ suppressPackageStartupMessages({
   library(tidyr)
   library(ggplot2)
   library(ggpubr)
-
+  
   # String handling
   library(stringi)
   library(stringr)
-
+  
   # Single-cell analysis
   library(Seurat)
   library(patchwork)
   library(monocle3)
   library(slingshot)
-
+  
   # Functional enrichment
   library(clusterProfiler)
   library(org.Hs.eg.db)
-
+  
   # Table/report generation
   library(flextable)
   library(officer)
-
+  
   # Additional tools
   library(tibble)
   library(ComplexHeatmap)
@@ -74,9 +74,9 @@ palette <- c(
 ################################################################################
 ### 2) Data Loading
 ################################################################################
-data.integrated <- readRDS('20250806_lin3.beta.reintegrated.rds')
+data.integrated <- readRDS('lin3.beta.reintegrated.rds')
 df <- as.data.frame(data.integrated@meta.data)
-cds <- readRDS('20250630_cds_lin3.rds')
+cds <- readRDS('cds_lin3.rds')
 
 desired_order <- c('1', '2', '3')
 
@@ -98,55 +98,93 @@ desired_order <- c('1', '2', '3')
 C6 <- df %>%
   drop_na(Age) %>%
   mutate(monocle_clusters2 = as.character(monocle_clusters2)) %>%
-  group_by(monocle_clusters2) %>%
-  summarise(median_value = median(Age, na.rm = TRUE),
-            mad_value = mad(Age, na.rm = TRUE)) %>%
-  ggplot(aes(x = monocle_clusters2, y = median_value, fill = monocle_clusters2)) +
-  geom_bar(stat = "identity", position = position_dodge(), color = 'black', width = 0.8) +
-  geom_errorbar(aes(ymin = median_value, ymax = median_value + mad_value),
-                width = 0.2, position = position_dodge(0.9)) +
-  ggpubr::theme_pubr(border = FALSE, legend = 'none', base_size = 10) +
+  ggplot(aes(x = monocle_clusters2, y = Age, fill = monocle_clusters2)) +
+  geom_violin(
+    scale = "width",
+    trim = FALSE,
+    color = "black",
+    linewidth = 0.5
+  ) +
+  geom_boxplot(
+    width = 0.12,
+    outlier.shape = NA,
+    fill = "white",
+    color = "black",
+    linewidth = 0.5
+  ) +
+  ggpubr::theme_pubr(
+    border = FALSE,
+    legend = "none",
+    base_size = 10
+  ) +
   scale_x_discrete(limits = desired_order) +
-  labs(x = "Cluster", y = "Median Age") +
-  theme(axis.title.y = element_text(face = 'bold', size = 14),
-        axis.text = element_text(size = 14, face = 'bold'),
-        axis.title.x = element_text(face = 'bold', size = 14)) +
-  scale_fill_manual(values = c('1'='#F8766D','2'='#C49A00','3'='#53B400','4'='#00C094','5'='#00B6EB'))
+  labs(
+    x = NULL,
+    y = "Age (years)"
+  ) +
+  theme(
+    axis.title.y = element_text(face = "bold", size = 16),
+    axis.text = element_text(face = "bold", size = 18),
+    axis.title.x = element_text(face = "bold", size = 16)
+  ) +
+  scale_fill_manual(values = c('1'='#F8766D','2'='#C49A00','3'='#53B400'))
 
 # Figure 6D
 D6 <- df %>%
   drop_na(BMI) %>%
-  mutate(monocle_clusters2 = as.character(monocle_clusters2)) %>%
-  group_by(monocle_clusters2) %>%
-  summarise(median_value = median(BMI, na.rm = TRUE),
-            mad_value = mad(BMI, na.rm = TRUE)) %>%
-  ggplot(aes(x = monocle_clusters2, y = median_value, fill = monocle_clusters2)) +
-  geom_bar(stat = "identity", position = position_dodge(), color = 'black', width = 0.8) +
-  geom_errorbar(aes(ymin = median_value, ymax = median_value + mad_value),
-                width = 0.2, position = position_dodge(0.9)) +
-  ggpubr::theme_pubr(border = FALSE, legend = 'none', base_size = 10) +
+  mutate(monocle_clusters = as.character(monocle_clusters2)) %>%
+  ggplot(
+    aes(
+      x = monocle_clusters,
+      y = BMI,
+      fill = monocle_clusters
+    )
+  ) +
+  geom_violin(
+    scale = "width",
+    trim = FALSE,
+    color = "black",
+    linewidth = 0.5
+  ) +
+  geom_boxplot(
+    width = 0.12,
+    outlier.shape = NA,
+    fill = "white",
+    color = "black",
+    linewidth = 0.5
+  ) +
+  ggpubr::theme_pubr(
+    border = FALSE,
+    legend = "none",
+    base_size = 10
+  ) +
   scale_x_discrete(limits = desired_order) +
-  labs(x = "Cluster", y = "Median BMI") +
-  theme(axis.title.y = element_text(face = 'bold', size = 14),
-        axis.text = element_text(size = 14, face = 'bold'),
-        axis.title.x = element_text(face = 'bold', size = 14)) +
-  scale_fill_manual(values = c('1'='#F8766D','2'='#C49A00','3'='#53B400','4'='#00C094','5'='#00B6EB'))
+  labs(
+    x = "Cluster",
+    y = expression(bold("BMI (kg/m"^2*")"))
+  ) +
+  theme(
+    axis.title.y = element_text(face = "bold", size = 16),
+    axis.text = element_text(face = "bold", size = 18),
+    axis.title.x = element_text(face = "bold", size = 16)
+  ) +
+  scale_fill_manual(values = c('1'='#F8766D','2'='#C49A00','3'='#53B400'))
 
 (C6 / D6)
 
 ################################################################################
-### 4) Supplementary Figure S8A–S8F
+### 4) Supplementary Figure S10A–S10F
 ################################################################################
-# S8A
-S8A <- plot_cells(
+# S10A
+S10A <- plot_cells(
   cds, show_trajectory_graph = F,
   color_cells_by = 'Study',
   label_cell_groups = FALSE, cell_size = 1, group_label_size = 4
 ) + ggpubr::clean_theme() + NoLegend() +
   scale_color_manual(values = palette[-c(12, 13, 14)])
 
-# S8B
-S8B <- df %>%
+# S10B
+S10B <- df %>%
   group_by(monocle_clusters2, Study) %>% dplyr::count() %>%
   mutate(monocle_clusters2 = as.character(monocle_clusters2)) %>%
   group_by(monocle_clusters2) %>%
@@ -163,15 +201,15 @@ S8B <- df %>%
         legend.text = element_text(face = 'bold', size = 10),
         legend.title = element_text(face = 'bold', size = 14))
 
-# S8C
-S8C <- plot_cells(
+# S10C
+S10C <- plot_cells(
   cds, show_trajectory_graph = F,
   color_cells_by = 'Condition',
   label_cell_groups = FALSE, cell_size = 1, group_label_size = 4
 ) + ggpubr::clean_theme() + NoLegend()
 
-# S8D
-S8D <- df %>%
+# S10D
+S10D <- df %>%
   group_by(monocle_clusters2, Condition) %>% dplyr::count() %>%
   mutate(monocle_clusters2 = as.character(monocle_clusters2)) %>%
   group_by(monocle_clusters2) %>%
@@ -188,55 +226,174 @@ S8D <- df %>%
         legend.text = element_text(face = 'bold', size = 14),
         legend.title = element_text(face = 'bold', size = 14))
 
-# S8A–D combo
-(S8A / S8B) | (S8C / S8D)
+# S10A–D combo
+(S10A / S10B) | (S10C / S10D)
 
-# S8E
-S8E <- df %>%
-  drop_na(Hba1c) %>%
-  ggplot(aes(monocle_clusters2, Hba1c, fill = monocle_clusters2)) +
-  geom_boxplot() +
-  ggpubr::theme_pubr(border = FALSE, legend = 'none') +
-  scale_x_discrete(limits = desired_order) +
-  labs(x = "Cluster", y = "HbA1c (%)") +
-  scale_fill_manual(values = c('1'='#F8766D','2'='#C49A00','3'='#53B400','4'='#00C094','5'='#00B6EB')) +
-  theme(axis.title.y = element_text(face = 'bold', size = 16),
-        axis.text = element_text(face = 'bold', size = 18),
-        axis.title.x = element_text(face = 'bold', size = 16),
-        legend.text = element_text(face = 'bold', size = 14),
-        legend.title = element_text(face = 'bold', size = 14))
+################################################################################
+# S10E Reconstruct harmonized donor IDs for donor-level HbA1c analysis
+################################################################################
 
-# S8F
-S8F <- df %>%
-  drop_na(Hba1c) %>%
-  mutate(monocle_clusters2 = as.character(monocle_clusters2)) %>%
-  group_by(monocle_clusters2) %>%
-  summarise(median_value = median(Hba1c, na.rm = TRUE),
-            mad_value = mad(Hba1c, na.rm = TRUE)) %>%
-  mutate(Hba1c_class = case_when(
-    median_value < 5.7 ~ "ND",
-    median_value >= 5.7 & median_value < 6.5 ~ "pre-T2D",
-    median_value >= 6.5 ~ "T2D"
-  )) %>%
-  ggplot(aes(x = monocle_clusters2, y = median_value, fill = Hba1c_class)) +
-  geom_bar(stat = "identity", position = position_dodge(), color = 'black', width = 0.8) +
-  geom_errorbar(aes(ymin = median_value, ymax = median_value + mad_value),
-                width = 0.2, position = position_dodge(0.9)) +
-  ylim(0, 9) +
-  scale_fill_manual(values = c('#F8766D', '#FEAF16FF', '#619CFF')) +
-  geom_text(aes(label = paste0(round(median_value, 1), '%')),
-            size = 8, vjust = 2, position = position_dodge(0.8)) +
-  ggpubr::theme_pubr(border = FALSE, legend = 'top', base_size = 10) +
-  scale_x_discrete(limits = desired_order) +
-  labs(x = "Cluster", y = "Median HbA1c (%)") +
-  guides(fill = guide_legend(title = "HbA1c class")) +
-  theme(axis.title.y = element_text(face = 'bold', size = 16),
-        axis.text = element_text(face = 'bold', size = 18),
-        axis.title.x = element_text(face = 'bold', size = 16),
-        legend.text = element_text(face = 'bold', size = 14),
-        legend.title = element_text(face = 'bold', size = 14))
+annotation_dir <- "revision_out"
 
-(S8E / S8F)
+ann81608 <- readr::read_csv(
+  file.path(annotation_dir, "GSE81608.csv"),
+  show_col_types = FALSE
+)
+
+ann153855 <- readr::read_csv(
+  file.path(annotation_dir, "GSE153855.csv"),
+  show_col_types = FALSE
+)
+
+ann81608 <- ann81608 %>%
+  transmute(
+    sample_name = as.character(Run),
+    annotated_donor = as.character(donor_id)
+  ) %>%
+  filter(
+    !is.na(sample_name),
+    sample_name != "",
+    !is.na(annotated_donor),
+    annotated_donor != ""
+  ) %>%
+  distinct()
+
+ann153855 <- ann153855 %>%
+  transmute(
+    sample_name = as.character(Run),
+    annotated_biosample = as.character(BioSample)
+  ) %>%
+  filter(
+    !is.na(sample_name),
+    sample_name != "",
+    !is.na(annotated_biosample),
+    annotated_biosample != ""
+  ) %>%
+  distinct()
+
+fallback_studies <- c(
+  "GSE98887",
+  "GSE124742",
+  "EMTAB5061",
+  "GSE86469",
+  "GSE81547"
+)
+
+signature_value <- function(x) {
+  x <- as.character(x)
+  x[is.na(x) | x == ""] <- "NA"
+  x
+}
+
+df <- df %>%
+  left_join(ann81608, by = "sample_name") %>%
+  left_join(ann153855, by = "sample_name") %>%
+  mutate(
+    donor_signature = paste(
+      signature_value(Age),
+      signature_value(BMI),
+      signature_value(Hba1c),
+      signature_value(Gender),
+      signature_value(Ethnicity),
+      signature_value(Condition),
+      sep = "|"
+    ),
+    donor_id = case_when(
+      orig.ident == "GSE81608" ~
+        paste0("GSE81608::", annotated_donor),
+      
+      orig.ident == "GSE153855" ~
+        paste0("GSE153855::", annotated_biosample),
+      
+      Study %in% fallback_studies ~
+        paste0(Study, "::metadata::", donor_signature),
+      
+      TRUE ~
+        paste0(Study, "::", orig.ident)
+    )
+  )
+
+################################################################################
+# Create one metadata row per harmonized donor/sample for S10G
+################################################################################
+
+donor_meta <- df %>%
+  dplyr::select(
+    donor_id,
+    Study,
+    orig.ident,
+    Age,
+    BMI,
+    Hba1c,
+    Gender,
+    Ethnicity,
+    Condition
+  ) %>%
+  dplyr::distinct()
+
+donor_meta_check <- donor_meta %>%
+  dplyr::count(donor_id) %>%
+  dplyr::filter(n > 1)
+
+print(donor_meta_check)
+
+################################################################################
+# Figure S10E — donor-level HbA1c distribution
+################################################################################
+
+hba1c_donor_cluster <- df %>%
+  filter(
+    !is.na(Hba1c),
+    !is.na(monocle_clusters2)
+  ) %>%
+  group_by(donor_id, monocle_clusters2) %>%
+  summarise(
+    Hba1c = first(Hba1c),
+    .groups = "drop"
+  )
+
+S10E <- ggplot(
+  hba1c_donor_cluster,
+  aes(
+    x = factor(monocle_clusters2, levels = desired_order),
+    y = Hba1c,
+    fill = factor(monocle_clusters2, levels = desired_order)
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  ggbeeswarm::geom_quasirandom(
+    width = 0.15,
+    size = 1.2
+  ) +
+  geom_hline(
+    yintercept = 5.7,
+    linetype = "dashed"
+  ) +
+  ggpubr::theme_pubr(legend = "none") +
+  labs(
+    x = "Cluster",
+    y = "Donor HbA1c (%)"
+  ) +
+  theme(
+    axis.title.y = element_text(face = "bold", size = 16),
+    axis.text = element_text(face = "bold", size = 18),
+    axis.title.x = element_text(face = "bold", size = 16)
+  )
+
+print(S10E)
+
+hba1c_cluster_summary <- hba1c_donor_cluster %>%
+  dplyr::group_by(monocle_clusters2) %>%
+  dplyr::summarise(
+    n_donor_samples = dplyr::n(),
+    median_HbA1c = median(Hba1c, na.rm = TRUE),
+    MAD_HbA1c = mad(Hba1c, na.rm = TRUE),
+    min_HbA1c = min(Hba1c, na.rm = TRUE),
+    max_HbA1c = max(Hba1c, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+print(hba1c_cluster_summary, n = Inf)
 
 ################################################################################
 ### 5) Slingshot Curves & UMAP Labels
@@ -411,9 +568,6 @@ draw(ht1, merge_legend = TRUE, heatmap_legend_side = "right")
 dev.off()
 
 # Legends
-HbA1c_classes <- sort(unique(coldata[cells1_o, "Hba1c_class2"]))
-HbA1c_colors <- setNames(c("#F8766D", "#FEAF16FF", "#619CFF")[seq_along(HbA1c_classes)], HbA1c_classes)
-HbA1c_legend <- Legend(labels = names(HbA1c_colors), title = "HbA1c Class", legend_gp = gpar(fill = HbA1c_colors))
 
 clusters <- sort(unique(coldata[cells1_o, "Cluster"]))
 cluster_colors <- setNames(c("#F8766D", "#C49A00", "#53B400", "#00C094", "#00B6EB")[seq_along(clusters)], clusters)
@@ -427,7 +581,12 @@ Pseudotime_legend <- Legend(col_fun = pseudotime_fun, title = "Pseudotime", lege
 expr_fun <- colorRamp2(c(-2, 0, 2), c("#0000FF", "#00FFFF", "#FF0000"))
 Expression_legend <- Legend(col_fun = expr_fun, title = "Expression (z)", legend_height = unit(2, "cm"))
 
-all_legends <- packLegend(HbA1c_legend, Cluster_legend, Pseudotime_legend, Expression_legend, direction = "vertical")
+all_legends <-
+  packLegend(Cluster_legend,
+             Pseudotime_legend,
+             Expression_legend,
+             direction = "vertical")
+
 draw(all_legends, just = "left")
 dev.off()
 
@@ -532,7 +691,7 @@ ggplot(res_filt_2, aes(x = log2FoldChange, y = -log10(padj))) +
         legend.text = element_text(face = 'bold', size = 14))
 
 ################################################################################
-### 8) Dotplot (Figure S8G)
+### 8) Dotplot (Figure S10F)
 ################################################################################
 beta_genes <- c("INS","PDX1","NKX6-1","PCSK1","MAFA","G6PC2","IAPP","SLC30A8","GAD2","ABCC8")
 alpha_genes <- c("GCG","IRX2","ARX","TM4SF4","TTR")
@@ -592,7 +751,7 @@ monocle_theme_opts <- function() {
     theme(legend.key = element_blank())
 }
 
-point_colors <- c("ND"="#F8766D","pre-T2D"="#FEAF16FF","T2D"="#619CFF")
+
 plt_data <- data.integrated@meta.data %>% as.data.frame()
 mycolors <- c('#F8766D','#C49A00','#53B400')
 genes <- c('Core','Maturity','Poly_Endocrine','Lipotoxic Stress','Dedifferentiation','Exocrine')
@@ -620,46 +779,826 @@ for (gene in genes) {
 wrap_plots(plt_list, guides = 'collect', nrow = 2)
 
 ################################################################################
-### 9) Meta-data correlation (Figure S8H)
+# 6. Figure S10G
+#    Donor-level C3 occupancy
+#
+# Occupancy =
+#   donor's number of Lineage3 C3 cells
+#   ----------------------------------
+#   donor's total number of Lineage3 cells
+#
+# Donors with zero C3 cells MUST be retained with occupancy = 0.
 ################################################################################
-metadata <- data.integrated@meta.data[, c("orig.ident","monocle_clusters2","Age","BMI","Hba1c","Gender","Ethnicity")]
 
-cluster_props <- table(metadata$orig.ident, metadata$monocle_clusters2) %>% prop.table(margin = 1) %>% as.data.frame()
-names(cluster_props) <- c("orig.ident", "cluster", "proportion")
+donor_totals <- df %>%
+  dplyr::filter(
+    !is.na(donor_id),
+    !is.na(monocle_clusters2)
+  ) %>%
+  dplyr::count(
+    donor_id,
+    name = "total_lineage3_cells"
+  )
 
-donor_data <- merge(cluster_props,
-                    unique(metadata[, c("orig.ident","Age","BMI","Hba1c","Gender","Ethnicity")]),
-                    by = "orig.ident")
+donor_c3_counts <- df %>%
+  dplyr::filter(
+    !is.na(donor_id),
+    monocle_clusters2 == "3"
+  ) %>%
+  dplyr::count(
+    donor_id,
+    name = "C3_cells"
+  )
 
-cor.test(donor_data$BMI[donor_data$cluster == "3"], donor_data$proportion[donor_data$cluster == "3"])
-cor.test(donor_data$Age[donor_data$cluster == "3"], donor_data$proportion[donor_data$cluster == "3"])
-cor.test(donor_data$Hba1c[donor_data$cluster == "3"], donor_data$proportion[donor_data$cluster == "3"])
-t.test(proportion ~ Gender, data = donor_data[donor_data$cluster == "3", ])
-kruskal.test(proportion ~ Ethnicity, data = donor_data[donor_data$cluster == "3", ])
+donor_props <- donor_totals %>%
+  dplyr::left_join(
+    donor_c3_counts,
+    by = "donor_id"
+  ) %>%
+  dplyr::mutate(
+    C3_cells = tidyr::replace_na(
+      C3_cells,
+      0L
+    ),
+    proportion = C3_cells /
+      total_lineage3_cells
+  ) %>%
+  dplyr::left_join(
+    donor_meta,
+    by = "donor_id"
+  ) %>%
+  dplyr::arrange(
+    donor_id
+  )
 
-stats_table <- data.frame(
-  Metadata = c("BMI","Age","HbA1c","Gender","Ethnicity"),
-  Cluster = c("C3","C3","C3","C3","C3"),
-  Test = c("Pearson","Pearson","Pearson","t-test","Kruskal-Wallis"),
-  Statistic = c("r=0.375","r=0.055","r=0.191","t=-0.500","χ²=7.910"),
-  P_value = c("0.002","0.644","0.170","0.619","0.019"),
-  CI_95 = c("0.151 to 0.562","-0.176 to 0.280","-0.083 to 0.439","-0.166 to 0.099","-")
+
+################################################################################
+# 7. Statistical test functions
+################################################################################
+
+continuous_test <- function(
+    dat,
+    variable
+) {
+  
+  d <- dat %>%
+    dplyr::filter(
+      !is.na(
+        .data[[variable]]
+      ),
+      !is.na(proportion)
+    )
+  
+  if (nrow(d) < 3) {
+    
+    return(
+      tibble::tibble(
+        trait = variable,
+        test_method = "Spearman correlation",
+        n_donors = nrow(d),
+        statistic = NA_real_,
+        statistic_name = "rho",
+        p_value = NA_real_,
+        group_summary = "insufficient donors"
+      )
+    )
+  }
+  
+  fit <- stats::cor.test(
+    d[[variable]],
+    d$proportion,
+    method = "spearman",
+    exact = FALSE
+  )
+  
+  tibble::tibble(
+    trait = variable,
+    test_method = "Spearman correlation",
+    n_donors = nrow(d),
+    statistic = unname(
+      fit$estimate
+    ),
+    statistic_name = "rho",
+    p_value = fit$p.value,
+    group_summary = NA_character_
+  )
+}
+
+sex_test <- function(dat) {
+  
+  d <- dat %>%
+    dplyr::mutate(
+      Gender = tolower(
+        trimws(Gender)
+      )
+    ) %>%
+    dplyr::filter(
+      Gender %in% c(
+        "male",
+        "female"
+      ),
+      !is.na(proportion)
+    )
+  
+  if (
+    dplyr::n_distinct(
+      d$Gender
+    ) < 2 ||
+    nrow(d) < 3
+  ) {
+    
+    return(
+      tibble::tibble(
+        trait = "Gender",
+        test_method = "Wilcoxon rank-sum",
+        n_donors = nrow(d),
+        statistic = NA_real_,
+        statistic_name = "W",
+        p_value = NA_real_,
+        group_summary =
+          "insufficient donors or single sex"
+      )
+    )
+  }
+  
+  fit <- stats::wilcox.test(
+    proportion ~ Gender,
+    data = d,
+    exact = FALSE
+  )
+  
+  summary_by_group <- d %>%
+    dplyr::group_by(
+      Gender
+    ) %>%
+    dplyr::summarise(
+      n = dplyr::n(),
+      median_proportion = median(
+        proportion,
+        na.rm = TRUE
+      ),
+      .groups = "drop"
+    )
+  
+  tibble::tibble(
+    trait = "Gender",
+    test_method = "Wilcoxon rank-sum",
+    n_donors = dplyr::n_distinct(
+      d$donor_id
+    ),
+    statistic = unname(
+      fit$statistic
+    ),
+    statistic_name = "W",
+    p_value = fit$p.value,
+    group_summary = paste0(
+      summary_by_group$Gender,
+      ": n=",
+      summary_by_group$n,
+      ", median=",
+      round(
+        summary_by_group$median_proportion,
+        4
+      ),
+      collapse = "; "
+    )
+  )
+}
+
+ethnicity_test <- function(dat) {
+  
+  d <- dat %>%
+    dplyr::mutate(
+      Ethnicity = trimws(
+        Ethnicity
+      )
+    ) %>%
+    dplyr::filter(
+      !is.na(Ethnicity),
+      Ethnicity != "",
+      !is.na(proportion)
+    )
+  
+  if (
+    dplyr::n_distinct(
+      d$Ethnicity
+    ) < 2 ||
+    nrow(d) < 3
+  ) {
+    
+    return(
+      tibble::tibble(
+        trait = "Ethnicity",
+        test_method = "Kruskal-Wallis",
+        n_donors = nrow(d),
+        statistic = NA_real_,
+        statistic_name = "chi-square",
+        p_value = NA_real_,
+        group_summary =
+          "insufficient donors or single group"
+      )
+    )
+  }
+  
+  fit <- stats::kruskal.test(
+    proportion ~ Ethnicity,
+    data = d
+  )
+  
+  tibble::tibble(
+    trait = "Ethnicity",
+    test_method = "Kruskal-Wallis",
+    n_donors = dplyr::n_distinct(
+      d$donor_id
+    ),
+    statistic = unname(
+      fit$statistic
+    ),
+    statistic_name = "chi-square",
+    p_value = fit$p.value,
+    group_summary = NA_character_
+  )
+}
+
+################################################################################
+# 8. Run S10G tests
+################################################################################
+
+results_S10G <- dplyr::bind_rows(
+  continuous_test(
+    donor_props,
+    "BMI"
+  ),
+  continuous_test(
+    donor_props,
+    "Age"
+  ),
+  continuous_test(
+    donor_props,
+    "Hba1c"
+  ),
+  sex_test(
+    donor_props
+  ),
+  ethnicity_test(
+    donor_props
+  )
+) %>%
+  dplyr::mutate(
+    cluster = "C3",
+    .before = 1
+  ) %>%
+  dplyr::mutate(
+    p_adjusted_BH = stats::p.adjust(
+      p_value,
+      method = "BH"
+    )
+  ) %>%
+  dplyr::arrange(
+    match(
+      trait,
+      c(
+        "BMI",
+        "Age",
+        "Hba1c",
+        "Gender",
+        "Ethnicity"
+      )
+    )
+  )
+
+cat("\nFigure S10G results:\n")
+
+print(
+  results_S10G,
+  n = Inf
 )
 
-ft <- stats_table %>%
-  flextable() %>%
-  merge_v(j = "Metadata") %>%
-  colformat_double(x = ., big.mark = ",", digits = 0, j = "Metadata") %>%
-  colformat_num(j = c("Statistic","P_value","CI_95"), digits = 3) %>%
-  width(j = c("Metadata","Cluster","Test","CI_95"), width = c(1.5,1,1.6,2), unit = "in") %>%
-  bg(i = ~ Cluster == "C2", bg = "#f0f0f0", part = "body") %>%
-  bg(i = ~ Cluster == "C5", bg = "#FFFFFF", part = "body") %>%
-  bg(bg = "#f0f0f0", part = "header") %>%
-  bold(bold = TRUE, part = "header") %>%
-  hline(part = "all", border = fp_border(color = "black")) %>%
-  align(j = "Metadata", align = "center", part = "body")
+################################################################################
+# 9. Create S10G publication table
+################################################################################
 
-ft
+stats_table_S10G <- results_S10G %>%
+  dplyr::mutate(
+    Metadata = dplyr::recode(
+      trait,
+      BMI = "BMI",
+      Age = "Age",
+      Hba1c = "HbA1c",
+      Gender = "Sex",
+      Ethnicity = "Ethnicity"
+    ),
+    Cluster = cluster,
+    Test = test_method,
+    Statistic = dplyr::case_when(
+      statistic_name == "rho" ~ paste0(
+        "rho=",
+        sprintf(
+          "%.3f",
+          statistic
+        )
+      ),
+      
+      statistic_name == "W" ~ paste0(
+        "W=",
+        sprintf(
+          "%.0f",
+          statistic
+        )
+      ),
+      
+      statistic_name ==
+        "chi-square" ~ paste0(
+          "chi²=",
+          sprintf(
+            "%.3f",
+            statistic
+          )
+        )
+    ),
+    P_value = sprintf(
+      "%.4f",
+      p_value
+    ),
+    P_adjusted_BH = sprintf(
+      "%.4f",
+      p_adjusted_BH
+    )
+  ) %>%
+  dplyr::select(
+    Metadata,
+    Cluster,
+    Test,
+    n_donors,
+    Statistic,
+    P_value,
+    P_adjusted_BH
+  )
+
+print(
+  stats_table_S10G,
+  n = Inf
+)
+
+figS10G_table <- stats_table_S10G %>%
+  flextable::flextable() %>%
+  flextable::set_header_labels(
+    Metadata = "Trait",
+    Cluster = "Cluster",
+    Test = "Test",
+    n_donors = "n donors",
+    Statistic = "Statistic",
+    P_value = "P",
+    P_adjusted_BH = "BH-adjusted P"
+  ) %>%
+  flextable::autofit() %>%
+  flextable::bg(
+    i = seq(
+      2,
+      nrow(
+        stats_table_S10G
+      ),
+      by = 2
+    ),
+    bg = "#f0f0f0",
+    part = "body"
+  ) %>%
+  flextable::bg(
+    bg = "#f0f0f0",
+    part = "header"
+  ) %>%
+  flextable::bold(
+    bold = TRUE,
+    part = "header"
+  ) %>%
+  flextable::align(
+    align = "center",
+    part = "all"
+  ) %>%
+  flextable::hline(
+    part = "all",
+    border = officer::fp_border(
+      color = "black",
+      width = 0.5
+    )
+  )
+
+figS10G_table
+
+################################################################################
+# 10. Save source-data outputs
+################################################################################
+
+dir.create(
+  "revision_out",
+  showWarnings = FALSE
+)
+
+readr::write_tsv(
+  hba1c_donor_cluster,
+  "revision_out/S10E_donor_HbA1c_by_cluster.tsv"
+)
+
+readr::write_tsv(
+  hba1c_cluster_summary,
+  "revision_out/S10E_donor_HbA1c_summary.tsv"
+)
+
+readr::write_tsv(
+  donor_props,
+  "revision_out/S10G_C3_donor_level_occupancy.tsv"
+)
+
+readr::write_tsv(
+  donor_meta,
+  "revision_out/S10G_C3_donor_metadata.tsv"
+)
+
+readr::write_tsv(
+  results_S10G,
+  "revision_out/S10G_C3_donor_trait_associations.tsv"
+)
+
+###############################################################################
+# SOURCE DATA EXPORT — Figure 6 and Figure S10
+###############################################################################
+
+source_dir <- "../SourceData/Figure6_S10"
+dir.create(source_dir, recursive = TRUE, showWarnings = FALSE)
+
+
+###############################################################################
+# Figure 6B, Figure 6E, Figure S10A and Figure S10C
+# Shared UMAP coordinates + plotted annotations
+###############################################################################
+
+umap_source <- as.data.frame(
+  SingleCellExperiment::reducedDims(cds)$UMAP
+)
+
+colnames(umap_source)[1:2] <- c("UMAP_1", "UMAP_2")
+
+umap_source <- umap_source %>%
+  tibble::rownames_to_column("cell_id")
+
+cds_meta_source <- as.data.frame(
+  SummarizedExperiment::colData(cds)
+) %>%
+  tibble::rownames_to_column("cell_id") %>%
+  dplyr::select(
+    cell_id,
+    dplyr::any_of(c(
+      "monocle_clusters2",
+      "Study",
+      "Condition",
+      "Lineage3"
+    ))
+  )
+
+fig6_umap_source <- umap_source %>%
+  dplyr::left_join(
+    cds_meta_source,
+    by = "cell_id"
+  )
+
+readr::write_tsv(
+  fig6_umap_source,
+  file.path(
+    source_dir,
+    "Fig6B_E_S10A_C_UMAP.tsv.gz"
+  )
+)
+
+
+###############################################################################
+# Figure 6B — Slingshot trajectory curve
+# Reconstruct directly from saved Slingshot object
+###############################################################################
+
+sim_source <- readRDS("slingshot_sim_lin3.rds")
+
+curves_source <- slingshot::slingCurves(
+  slingshot::SlingshotDataSet(sim_source)
+)
+
+fig6_slingshot_source <- lapply(
+  names(curves_source),
+  function(lineage_name) {
+    
+    curve_df <- as.data.frame(
+      curves_source[[lineage_name]]$s
+    )
+    
+    colnames(curve_df)[1:2] <- c(
+      "Dim_1",
+      "Dim_2"
+    )
+    
+    curve_df$lineage <- lineage_name
+    curve_df$path_id <- paste0(
+      lineage_name,
+      "_",
+      seq_len(nrow(curve_df))
+    )
+    
+    curve_df
+  }
+) %>%
+  dplyr::bind_rows() %>%
+  dplyr::select(
+    lineage,
+    path_id,
+    Dim_1,
+    Dim_2
+  )
+
+readr::write_tsv(
+  fig6_slingshot_source,
+  file.path(
+    source_dir,
+    "Fig6B_slingshot_curve.tsv"
+  )
+)
+
+###############################################################################
+# Figures 6C and 6D
+# Cell-weighted age and BMI distributions
+###############################################################################
+
+fig6cd_source <- data.integrated@meta.data %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("cell_id") %>%
+  dplyr::select(
+    cell_id,
+    monocle_clusters2,
+    Age,
+    BMI
+  )
+
+readr::write_tsv(
+  fig6cd_source,
+  file.path(
+    source_dir,
+    "Fig6C_D_age_BMI.tsv.gz"
+  )
+)
+
+
+###############################################################################
+# Figures S10B and S10D
+# Study and condition composition
+###############################################################################
+
+s10_meta <- data.integrated@meta.data %>%
+  as.data.frame()
+
+s10b_source <- s10_meta %>%
+  dplyr::count(
+    monocle_clusters2,
+    Study,
+    name = "cell_count"
+  ) %>%
+  dplyr::group_by(monocle_clusters2) %>%
+  dplyr::mutate(
+    proportion = cell_count / sum(cell_count),
+    variable = "Study",
+    category = as.character(Study)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(
+    cluster = monocle_clusters2,
+    variable,
+    category,
+    cell_count,
+    proportion
+  )
+
+s10d_source <- s10_meta %>%
+  dplyr::count(
+    monocle_clusters2,
+    Condition,
+    name = "cell_count"
+  ) %>%
+  dplyr::group_by(monocle_clusters2) %>%
+  dplyr::mutate(
+    proportion = cell_count / sum(cell_count),
+    variable = "Condition",
+    category = as.character(Condition)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(
+    cluster = monocle_clusters2,
+    variable,
+    category,
+    cell_count,
+    proportion
+  )
+
+readr::write_tsv(
+  dplyr::bind_rows(
+    s10b_source,
+    s10d_source
+  ),
+  file.path(
+    source_dir,
+    "FigS10B_D_composition.tsv"
+  )
+)
+
+
+###############################################################################
+# Figure 6F
+# INS expression versus Lineage3 pseudotime
+###############################################################################
+
+ins_expr <- Seurat::GetAssayData(
+  data.integrated,
+  assay = "RNA",
+  layer = "data"
+)["INS", ]
+
+fig6f_source <- data.integrated@meta.data %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("cell_id") %>%
+  dplyr::transmute(
+    cell_id,
+    pseudotime = Lineage3,
+    cluster = monocle_clusters2,
+    INS = as.numeric(
+      ins_expr[cell_id]
+    )
+  ) %>%
+  dplyr::filter(
+    !is.na(pseudotime)
+  )
+
+readr::write_tsv(
+  fig6f_source,
+  file.path(
+    source_dir,
+    "Fig6F_INS_pseudotime.tsv.gz"
+  )
+)
+
+
+###############################################################################
+# Figure 6H — GSEA
+# Export only the terms actually displayed
+###############################################################################
+
+fig6h_ids <- c(
+  "GO:0033993",
+  "GO:0042127",
+  "GO:0007186",
+  "GO:0006950",
+  "GO:0071396",
+  "GO:1901700"
+)
+
+fig6h_source <- as.data.frame(
+  gse@result
+) %>%
+  dplyr::filter(
+    ID %in% fig6h_ids
+  )
+
+readr::write_tsv(
+  fig6h_source,
+  file.path(
+    source_dir,
+    "Fig6H_GSEA.tsv"
+  )
+)
+
+
+###############################################################################
+# Figure 6I — pseudobulk DESeq2 volcano plot
+###############################################################################
+
+readr::write_tsv(
+  res_filt_2,
+  file.path(
+    source_dir,
+    "Fig6I_pseudobulk_DE.tsv"
+  )
+)
+
+###############################################################################
+# Figure S10F — dot plot
+###############################################################################
+
+s10f_genes <- unique(c(
+  beta_genes,
+  alpha_genes,
+  delta_genes,
+  progenitor_genes
+))
+
+s10f_source <- Seurat::DotPlot(
+  data.integrated,
+  features = s10f_genes,
+  group.by = "monocle_clusters2"
+)$data %>%
+  as.data.frame() %>%
+  dplyr::rename(
+    cluster = id,
+    gene = features.plot,
+    pct_expressing = pct.exp,
+    average_expression = avg.exp,
+    scaled_average_expression = avg.exp.scaled
+  ) %>%
+  dplyr::mutate(
+    gene_group = dplyr::case_when(
+      gene %in% beta_genes ~ "Beta",
+      gene %in% alpha_genes ~ "Alpha",
+      gene %in% delta_genes ~ "Delta",
+      gene %in% progenitor_genes ~ "Progenitor"
+    )
+  )
+
+readr::write_tsv(
+  s10f_source,
+  file.path(
+    source_dir,
+    "FigS10F_dotplot.tsv"
+  )
+)
+
+
+###############################################################################
+# Figure 6J
+# Cell-level module scores plotted against pseudotime
+###############################################################################
+
+fig6j_source <- data.integrated@meta.data %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("cell_id") %>%
+  dplyr::select(
+    cell_id,
+    Lineage3,
+    monocle_clusters2,
+    Core,
+    Maturity,
+    Poly_Endocrine,
+    `Lipotoxic Stress`,
+    Dedifferentiation,
+    Exocrine
+  ) %>%
+  dplyr::rename(
+    pseudotime = Lineage3,
+    cluster = monocle_clusters2
+  )
+
+readr::write_tsv(
+  fig6j_source,
+  file.path(
+    source_dir,
+    "Fig6J_module_scores_pseudotime.tsv.gz"
+  )
+)
+
+
+###############################################################################
+# Figures S10E and S10G
+#
+# These are already generated in revision_out.
+###############################################################################
+
+existing_source_files <- c(
+  "S10E_donor_HbA1c_by_cluster.tsv",
+  "S10E_donor_HbA1c_summary.tsv",
+  "S10G_C3_donor_level_occupancy.tsv",
+  "S10G_C3_donor_metadata.tsv",
+  "S10G_C3_donor_trait_associations.tsv"
+)
+
+for (f in existing_source_files) {
+  
+  src <- file.path(
+    "revision_out",
+    f
+  )
+  
+  if (file.exists(src)) {
+    
+    file.copy(
+      src,
+      file.path(
+        source_dir,
+        f
+      ),
+      overwrite = TRUE
+    )
+    
+  } else {
+    
+    warning(
+      "Missing existing source-data file: ",
+      src
+    )
+  }
+}
+
 
 ###############################################################################
 # sessionInfo()

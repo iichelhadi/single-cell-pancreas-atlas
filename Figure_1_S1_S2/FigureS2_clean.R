@@ -2,12 +2,12 @@
 # Project: Pancreas scRNA atlas — figures S2
 # File: Figures_S2.R
 # Author: Elhadi Iich
-# Date: 2025-08-27
+# Date: 2026-09-07
 #
 # Description:
 #   Generates supplemental figure panels S2A to S2F.
-#   Your original code is preserved verbatim. Only comments and section
-#   banners were added for readability on GitHub.
+#   Original figure-generation code with source-data export added for the 
+#   revised manuscript.
 #
 # Inputs:
 #   - DEGs_allmarkers_res_0.2_ordered_pcs.tsv
@@ -167,6 +167,102 @@ SCpubr::do_DotPlot(sample = merged_seurat,
 
 dev.off()
 
+
+###############################################################################
+# SOURCE DATA EXPORT — Figure S2
+###############################################################################
+
+source_dir <- "../SourceData/FigureS2"
+dir.create(source_dir, recursive = TRUE, showWarnings = FALSE)
+
+###############################################################################
+# Figure S2A — cluster marker volcano plot
+#
+# Export the complete marker table used by jjVolcano, including the
+# percentage-difference columns added by Add_Pct_Diff().
+###############################################################################
+
+readr::write_tsv(
+  cluster_markers,
+  file.path(
+    source_dir,
+    "FigS2A_volcano_data.tsv.gz"
+  )
+)
+
+
+###############################################################################
+# Figure S2C — scPred cell-type composition by cluster
+###############################################################################
+
+figs2c_source <- merged_seurat@meta.data %>%
+  as.data.frame() %>%
+  dplyr::count(
+    RNA_snn_res.0.2,
+    scpred_no_rejection,
+    name = "cell_count"
+  ) %>%
+  dplyr::group_by(RNA_snn_res.0.2) %>%
+  dplyr::mutate(
+    proportion = cell_count / sum(cell_count)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::rename(
+    cluster = RNA_snn_res.0.2,
+    predicted_cell_type = scpred_no_rejection
+  )
+
+readr::write_tsv(
+  figs2c_source,
+  file.path(
+    source_dir,
+    "FigS2C_scpred_composition.tsv"
+  )
+)
+
+
+###############################################################################
+# Figures S2D, S2E and S2F
+#
+# Cell-level expression values underlying:
+#   S2D — GHRL violin plot
+#   S2E — endocrine/stress marker dot plot
+#   S2F — cycling marker dot plot
+###############################################################################
+
+s2_genes <- unique(c(
+  # S2D
+  "GHRL",
+  
+  # S2E
+  "GCG", "INS", "SST", "PPY", "GHRL",
+  "HSPA1A", "HSPA1B", "HSPH1",
+  
+  # S2F
+  "UBE2C", "TOP2A", "CDK1", "BIRC5", "PBK",
+  "CDKN3", "MKI67", "CDC20", "CCNB2", "CDCA3"
+))
+
+figs2_expression <- Seurat::FetchData(
+  merged_seurat,
+  vars = c("RNA_snn_res.0.2", s2_genes)
+) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("cell_id") %>%
+  dplyr::rename(
+    cluster = RNA_snn_res.0.2
+  )
+
+readr::write_tsv(
+  figs2_expression,
+  file.path(
+    source_dir,
+    "FigS2D_E_F_expression.tsv.gz"
+  )
+)
+
+
 ###############################################################################
 # sessionInfo()
 ###############################################################################
+

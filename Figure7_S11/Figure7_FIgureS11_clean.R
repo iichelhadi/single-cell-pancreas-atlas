@@ -1,8 +1,8 @@
 ###############################################################################
 # Project: Pancreas scRNA atlas — Static MI Network and Hypergraph Modules
-# File: Figure7_FIgureS9_clean.R
+# File: Figure7_FIgureS11_clean.R
 # Author: Elhadi Iich
-# Date: 2025-08-29
+# Date: 2026-09-11
 #
 # Description:
 #   Constructs mutual information (MI) networks for L2_C5 and L3_C3 clusters,
@@ -56,8 +56,8 @@ num_cores <- detectCores()
 
 # Define lineage end clusters
 lineage_clusters <- list(
-  L2_C5 = list(obj = readRDS("lin2.beta.reintegrated.rds"), cluster = "5"),
-  L3_C3 = list(obj = readRDS("lin3.beta.reintegrated.rds"), cluster = "3")
+  L2_C5 = list(obj = readRDS("./lin2.beta.reintegrated.rds"), cluster = "5"),
+  L3_C3 = list(obj = readRDS("./lin3.beta.reintegrated.rds"), cluster = "3")
 )
 
 # Preload Seurat objects
@@ -481,8 +481,8 @@ for (cluster_name in names(hypergraph_results)) {
 }
 
 plot_data
-
-############# Bar Plot ###################### Figure 7B
+################################################################################
+################################### Figure 7B ##################################
 plot_data$Density <- round(plot_data$Density, 2)
 plot_data$Group <- str_replace_all(plot_data$Group, pattern = 'Group', replacement = 'Module')
 plot1 <- ggplot(subset(plot_data, Cluster %in% c('L2_C5')), aes(x = Group, y = Size, fill = Density)) +
@@ -523,8 +523,8 @@ simplify_graph <- function(g, max_nodes = 50) {
   }
   g
 }
-
-################################## Figure S9C ##################################
+################################################################################
+################################## Figure S11C ##################################
 # Network Plots
 network_plots <- list()
 for (cluster_name in names(hypergraph_results)) {
@@ -572,12 +572,13 @@ for (cluster_name in names(hypergraph_results)) {
 
 combined_network_plot <- wrap_plots(network_plots, ncol = 3)
 combined_network_plot
-
-################################### Figure S9B #################################
+################################################################################
+################################### Figure S11B #################################
 # Hub Table
 gene_data_list <- lapply(names(hypergraph_results), function(cluster_name) {
   groups <- hypergraph_results[[cluster_name]]$hypergraph$groups
-  graph_cluster <- results[[cluster_name]]$graph
+  # graph_cluster <- results[[cluster_name]]$graph
+  graph_cluster <- hypergraph_results[[cluster_name]]$filtered_graph
   df_list <- lapply(names(groups), function(group_name) {
     genes <- groups[[group_name]]
     subgraph <- induced_subgraph(graph_cluster, V(graph_cluster)[name %in% genes])
@@ -597,15 +598,28 @@ hub_table <- gene_data %>%
 hub_table
 
 ft <- flextable(hub_table) %>%
-  autofit() %>%
-  set_header_labels(Cluster = "Cluster", Community = "Community", Top_Hub_Genes = "Top Hub Genes") %>%
+  set_header_labels(
+    Cluster = "Cluster", 
+    Community = "Community", 
+    Top_Hub_Genes = "Top Hub Genes"
+  ) %>%
   bg(part = "header", bg = "gray") %>%
   merge_v(j = "Cluster") %>%
   align(j = "Cluster", align = "center", part = "body") %>%
-  theme_vanilla()
+  theme_vanilla() %>%
+  width(j = "Cluster", width = 0.8) %>%
+  width(j = "Community", width = 1.0) %>%
+  width(j = "Top_Hub_Genes", width = 8.5) %>%
+  set_table_properties(layout = "fixed")
 
-ft
+library(webshot2)
 
+save_as_image(
+  ft,
+  path = "FigureS11B_hub_table.png",
+  zoom = 3
+)
+################################################################################
 ################################ Figure 7C ######################################
 # Venn Diagram
 venn.plot <- venn.diagram(
@@ -697,23 +711,18 @@ mi_genes_l2_c5 <- unique(c(mi_edges_l2_c5$Gene1, mi_edges_l2_c5$Gene2))
 mi_genes_l2_c5 <- filter_housekeeping(mi_genes_l2_c5)
 dim(mi_edges_l2_c5)
 
-# Create MI pairs as strings (original)
-mi_pairs_raw <- unique(
-  apply(mi_edges_l2_c5, 1, function(row) paste(sort(row), collapse = "_"))
-)
+# Create undirected gene-pair identifiers for MI edges
+clean_mi_pairs <- mi_edges_l2_c5 %>%
+  dplyr::transmute(
+    pair = paste(
+      pmin(Gene1, Gene2),
+      pmax(Gene1, Gene2),
+      sep = "_"
+    )
+  ) %>%
+  dplyr::pull(pair) %>%
+  unique()
 
-# Clean MI pairs by extracting gene names (assuming format: "<numeric>_<gene1>_<gene2>")
-clean_mi_pairs <- sapply(mi_pairs_raw, function(x) {
-  parts <- unlist(strsplit(x, "_"))
-  if(length(parts) >= 3){
-    # Use the 2nd and 3rd elements as the gene names
-    sorted_pair <- paste(sort(parts[2:3]), collapse = "_")
-  } else {
-    sorted_pair <- x
-  }
-  return(sorted_pair)
-})
-clean_mi_pairs <- unique(clean_mi_pairs)
 head(clean_mi_pairs)
 
 # Annotate each SCENIC edge with MI evidence using cleaned MI pairs.
@@ -865,3 +874,4 @@ print(p_modtraj)
 ################################################################################
 # sessionInfo()
 ################################################################################
+

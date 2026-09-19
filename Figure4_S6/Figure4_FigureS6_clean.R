@@ -2,7 +2,7 @@
 # Project: scRNA beta cell atlas — Lineage 2 reintegration and Figure 4 suite
 # File: Figure4_FigureS6.R
 # Author: Elhadi Iich
-# Date: 2025-08-27
+# Date: 2026-09-07
 #
 # Description:
 #   End-to-end workflow for lineage 2 reintegration and visualization:
@@ -84,7 +84,6 @@ data.integrated <-
 df <- data.integrated@meta.data %>% as.data.frame()
 cds <- readRDS('cds_lin2.rds')
 
-sce <- readRDS('sce_lin2_1.rds')
 perc_expr <- read_tsv('Lineage2_sling_perc_expr.tsv')
 
 colnames(perc_expr) <- c('feature_id', 'perc_expr')
@@ -108,32 +107,38 @@ B4 <- plot_cells(cds, show_trajectory_graph = F,
 B4
 
 ##Figure 4C ####
-C4 <- df %>% drop_na(Age) %>%
+C4 <- df %>%
+  drop_na(Age) %>%
   mutate(monocle_clusters2 = as.character(monocle_clusters2)) %>%
-  group_by(monocle_clusters2) %>%
-  summarise(
-    median_value = median(Age, na.rm = TRUE),
-    mad_value = mad(Age, na.rm = TRUE)
-  )  %>%
-  ggplot(aes(x = monocle_clusters2, y = median_value, fill = monocle_clusters2)) +
-  geom_bar(
-    stat = "identity",
-    position = position_dodge(),
-    color = 'black',
-    width = 0.8
+  ggplot(aes(x = monocle_clusters2, y = Age, fill = monocle_clusters2)) +
+  geom_violin(
+    scale = "width",
+    trim = FALSE,
+    color = "black",
+    linewidth = 0.5
   ) +
-  geom_errorbar(
-    aes(ymin = median_value, #- mad_value, 
-        ymax = median_value + mad_value),
-    width = 0.2,
-    position = position_dodge(0.9)
-  ) + 
-  ggpubr::theme_pubr(border = FALSE, legend = 'none',base_size = 10) + 
+  geom_boxplot(
+    width = 0.12,
+    outlier.shape = NA,
+    fill = "white",
+    color = "black",
+    linewidth = 0.5
+  ) +
+  ggpubr::theme_pubr(
+    border = FALSE,
+    legend = "none",
+    base_size = 10
+  ) +
   scale_x_discrete(limits = desired_order) +
-  labs(x = "Cluster", y = "Median Age")+
-  theme(axis.title.y = element_text(face = 'bold', size = 14),
-        axis.text =  element_text(size = 14, face = 'bold'),
-        axis.title.x = element_text(face = 'bold', size = 14)) + 
+  labs(
+    x = "Cluster",
+    y = "Age (years)"
+  ) +
+  theme(
+    axis.title.y = element_text(face = "bold", size = 16),
+    axis.text = element_text(face = "bold", size = 18),
+    axis.title.x = element_text(face = "bold", size = 16)
+  ) + 
   scale_fill_manual(values = c('1'='#F8766D',
                                '2'='#C49A00',
                                '3'='#53B400',
@@ -141,32 +146,44 @@ C4 <- df %>% drop_na(Age) %>%
                                '5'='#00B6EB'))
 
 ### Figure 4D
-D4 <- df %>% drop_na(BMI) %>%
-  mutate(monocle_clusters2 = as.character(monocle_clusters2)) %>%
-  group_by(monocle_clusters2) %>%
-  summarise(
-    median_value = median(BMI, na.rm = TRUE),
-    mad_value = mad(BMI, na.rm = TRUE)
-  )  %>%
-  ggplot(aes(x = monocle_clusters2, y = median_value, fill = monocle_clusters2)) +
-  geom_bar(
-    stat = "identity",
-    position = position_dodge(),
-    color = 'black',
-    width = 0.8
+D4 <- df %>%
+  drop_na(BMI) %>%
+  mutate(monocle_clusters = as.character(monocle_clusters2)) %>%
+  ggplot(
+    aes(
+      x = monocle_clusters,
+      y = BMI,
+      fill = monocle_clusters
+    )
   ) +
-  geom_errorbar(
-    aes(ymin = median_value, #- mad_value, 
-        ymax = median_value + mad_value),
-    width = 0.2,
-    position = position_dodge(0.9)
-  ) + 
-  ggpubr::theme_pubr(border = FALSE, legend = 'none',base_size = 10) + 
+  geom_violin(
+    scale = "width",
+    trim = FALSE,
+    color = "black",
+    linewidth = 0.5
+  ) +
+  geom_boxplot(
+    width = 0.12,
+    outlier.shape = NA,
+    fill = "white",
+    color = "black",
+    linewidth = 0.5
+  ) +
+  ggpubr::theme_pubr(
+    border = FALSE,
+    legend = "none",
+    base_size = 10
+  ) +
   scale_x_discrete(limits = desired_order) +
-  labs(x = "Cluster", y = "Median BMI")+
-  theme(axis.title.y = element_text(face = 'bold', size = 14),
-        axis.text =  element_text(size = 14, face = 'bold'), 
-        axis.title.x = element_text(face = 'bold', size = 14))+ 
+  labs(
+    x = "Cluster",
+    y = expression(bold("BMI (kg/m"^2*")"))
+  ) +
+  theme(
+    axis.title.y = element_text(face = "bold", size = 16),
+    axis.text = element_text(face = "bold", size = 18),
+    axis.title.x = element_text(face = "bold", size = 16)
+  ) + 
   scale_fill_manual(values = c('1'='#F8766D',
                                '2'='#C49A00',
                                '3'='#53B400',
@@ -238,59 +255,51 @@ S6D <- df %>%
 (S6A/S6B)|(S6C/S6D)
 
 ##Figure S6E
-S6E <- df %>% drop_na(Hba1c) %>%
-  mutate(monocle_clusters2 = as.character(monocle_clusters2)) %>%
-  group_by(monocle_clusters2) %>%
-  summarise(
-    median_value = median(Hba1c, na.rm = TRUE),
-    mad_value = mad(Hba1c, na.rm = TRUE)
-  ) %>%
-  mutate(
-    Hba1c_class = case_when(
-      median_value < 5.7 ~ "ND",
-      median_value >= 5.7 & median_value < 6.5 ~ "pre-T2D",
-      median_value >= 6.5 ~ "T2D"
-    )
-  ) %>%
-  ggplot(aes(x = monocle_clusters2, 
-             y = median_value, 
-             fill = Hba1c_class)) +
-  geom_bar(
-    stat = "identity",
-    position = position_dodge(),
-    color = 'black',
-    width = 0.8
-  ) +
-  geom_errorbar(
-    aes(ymin = median_value, #- mad_value, 
-        ymax = median_value + mad_value),
-    width = 0.2,
-    position = position_dodge(0.9)
-  ) + ylim(0, 9) +
-  scale_fill_manual(values = c('#F8766D','#FEAF16FF','#619CFF'))+
-  geom_text(
-    aes(label = paste0(round(median_value, 1), '%')),
-    size = 8, vjust = 2,
-    position = position_dodge(0.8)) +
-  ggpubr::theme_pubr(border = FALSE, legend = 'top',base_size = 10) + 
-  scale_x_discrete(limits = desired_order) +
-  labs(x = "Cluster", y = "Median HbA1c (%)")+ 
-  guides(fill = guide_legend(title = "HbA1c class"))+
-  theme(axis.title.y = element_text(face = 'bold', size = 16),
-        axis.text =  element_text(face = 'bold', size = 18), 
-        axis.title.x = element_text(face = 'bold', size = 16),
-        legend.text = element_text(face = 'bold', size = 14),
-        legend.title = element_text(face = 'bold', size = 14))
+# S6E <- df %>% drop_na(Hba1c) %>%
+#   mutate(monocle_clusters2 = as.character(monocle_clusters2)) %>%
+#   group_by(monocle_clusters2) %>%
+#   summarise(
+#     median_value = median(Hba1c, na.rm = TRUE),
+#     mad_value = mad(Hba1c, na.rm = TRUE)
+#   ) %>%
+#   mutate(
+#     Hba1c_class = case_when(
+#       median_value < 5.7 ~ "ND",
+#       median_value >= 5.7 & median_value < 6.5 ~ "pre-T2D",
+#       median_value >= 6.5 ~ "T2D"
+#     )
+#   ) %>%
+#   ggplot(aes(x = monocle_clusters2, 
+#              y = median_value, 
+#              fill = Hba1c_class)) +
+#   geom_bar(
+#     stat = "identity",
+#     position = position_dodge(),
+#     color = 'black',
+#     width = 0.8
+#   ) +
+#   geom_errorbar(
+#     aes(ymin = median_value, #- mad_value, 
+#         ymax = median_value + mad_value),
+#     width = 0.2,
+#     position = position_dodge(0.9)
+#   ) + ylim(0, 9) +
+#   scale_fill_manual(values = c('#F8766D','#FEAF16FF','#619CFF'))+
+#   geom_text(
+#     aes(label = paste0(round(median_value, 1), '%')),
+#     size = 8, vjust = 2,
+#     position = position_dodge(0.8)) +
+#   ggpubr::theme_pubr(border = FALSE, legend = 'top',base_size = 10) + 
+#   scale_x_discrete(limits = desired_order) +
+#   labs(x = "Cluster", y = "Median HbA1c (%)")+ 
+#   guides(fill = guide_legend(title = "HbA1c class"))+
+#   theme(axis.title.y = element_text(face = 'bold', size = 16),
+#         axis.text =  element_text(face = 'bold', size = 18), 
+#         axis.title.x = element_text(face = 'bold', size = 16),
+#         legend.text = element_text(face = 'bold', size = 14),
+#         legend.title = element_text(face = 'bold', size = 14))
 
-S6F <- plot_cells(cds, show_trajectory_graph = F,
-                  color_cells_by = 'Hba1c_class_median',
-                  label_cell_groups=FALSE, cell_size = 1,
-                  # group_cells_by = 'cluster',
-                  group_label_size = 4)+ ggpubr::clean_theme() + NoLegend()+
-  scale_color_manual(values = c('#F8766D','#FEAF16FF','#619CFF'))+
-  guides(color = guide_legend(title = "HbA1c class"))
 
-(S6E/S6F)
 
 ################################################################################
 ### Slingshot Curves & UMAP Labels
@@ -509,15 +518,14 @@ H4 <- ggscatter(
 print(H4)
 
 ################################################################################
-### 6. Heatmap Data Prep, Drawing & Legends (Figure S6G)
+### 6. Heatmap Data Prep, Drawing & Legends (Figure S6E)
 ################################################################################
 
-### Figure S6G
+### Figure S6E
 
 coldata <- data.frame(
   study        = sim$study,
   Cluster      = sim$monocle_clusters2,
-  Hba1c_class2 = sim$Hba1c_class_median,
   Lineage2_1   = sim$slingPseudotime_1,
   Lineage2_2   = sim$slingPseudotime_2
 )
@@ -634,9 +642,6 @@ pt1_fun <- colorRamp2(
 )
 
 col_annot1 <- HeatmapAnnotation(
-  HbA1c    = anno_simple(as.character(coldata[cells1_rev,"Hba1c_class2"]),
-                         col = setNames(c("#F8766D","#FEAF16FF","#619CFF"),
-                                        sort(unique(coldata[cells1_rev,"Hba1c_class2"])))),
   Cluster  = anno_simple(as.character(coldata[cells1_rev,"Cluster"]),
                          col = setNames(c("#F8766D", "#C49A00", "#53B400","#00C094"),
                                         sort(unique(coldata[cells1_rev,"Cluster"])))),
@@ -653,9 +658,6 @@ pt2_fun <- colorRamp2(
   plasma(100)
 )
 col_annot2 <- HeatmapAnnotation(
-  HbA1c    = anno_simple(as.character(coldata[cells2_o,"Hba1c_class2"]),
-                         col = setNames(c("#F8766D","#FEAF16FF","#619CFF"),
-                                        sort(unique(coldata[cells2_o,"Hba1c_class2"])))),
   Cluster  = anno_simple(as.character(coldata[cells2_o,"Cluster"]),
                          col = setNames(c("#F8766D", "#53B400", "#00C094", "#00B6EB"),
                                         sort(unique(coldata[cells2_o,"Cluster"])))),
@@ -721,15 +723,6 @@ library(grid)
 
 # pdf("combined_heatmap_legend.pdf", width = 5, height = 6)
 
-# Legend for HbA1c (shared color scheme)
-HbA1c_classes <- sort(unique(c(coldata[cells1_rev, "Hba1c_class2"], coldata[cells2_o, "Hba1c_class2"])))
-HbA1c_colors  <- setNames(c("#F8766D", "#FEAF16FF", "#619CFF")[seq_along(HbA1c_classes)], HbA1c_classes)
-
-HbA1c_legend <- Legend(
-  labels     = names(HbA1c_colors),
-  title      = "HbA1c Class",
-  legend_gp  = gpar(fill = HbA1c_colors)
-)
 
 # Cluster legend (may have different clusters in each lineage)
 clusters <- sort(unique(c(coldata[cells1_rev, "Cluster"], coldata[cells2_o, "Cluster"])))
@@ -777,7 +770,6 @@ Expression_legend <- Legend(
 
 # Combine and draw all
 all_legends <- packLegend(
-  HbA1c_legend,
   Cluster_legend,
   Lineage_legend,
   Pseudotime_legend,
@@ -789,7 +781,7 @@ draw(all_legends, just = "left")
 dev.off()
 
 ################################################################################
-### Figure S6H
+### Figure S6F
 pseudotime_start_end_association_filt <-
   read_tsv(
     'lin2_1_pseudotime_start_end_association_filt.tsv'
@@ -840,7 +832,7 @@ gse@result %>% as.data.frame() %>%
                                hjust = 1,vjust = 1))
 
 
-### Figure S6I
+### Figure S6G
 pseudotime_start_end_association_filt <-
   read_tsv(
     'lin2_2_pseudotime_start_end_association_filt.tsv'
@@ -889,514 +881,16 @@ gse2_2@result %>% as.data.frame() %>%
                                hjust = 1,vjust = 1))
 
 ################################################################################
-### 7. Module Detection & GO Functions (Figures 4I–4K)
+### 7. Module trajectories and GO enrichment — Figures 4I–4K
 ################################################################################
 
-mat1_z <- readRDS('mat1_z.rds')
-mat2_z <- readRDS('mat2_z.rds')
-
-
-perc_expr <- read_tsv('Lineage2_sling_perc_expr.tsv')
-colnames(perc_expr)[1:2] <- c("gene", "pct_expr")
-dim(perc_expr)
-
-
-sce <- readRDS('sce_lin2.rds')
-
-
-coldata <- data.frame(
-  study        = sim$study,
-  Cluster      = sim$monocle_clusters2,
-  Hba1c_class2 = sim$Hba1c_class_median,
-  Lineage2_1   = sim$slingPseudotime_1,
-  Lineage2_2   = sim$slingPseudotime_2
-)
-rownames(coldata) <- colnames(sim)
-
-# Get pseudotime
-pt1 <- slingPseudotime(sim)[, "Lineage1"]
-pt2 <- slingPseudotime(sim)[, "Lineage2"]
-
-# Get Slingshot curve weights
-wts <- slingCurveWeights(sim)  # sds is your SlingshotDataSet object
-
-# Cells that are shared between both lineages (i.e., near bifurcation)
-shared_cells <- which(wts[, "Lineage1"] > 0.1 & wts[, "Lineage2"] > 0.1)
-
-# Estimate bifurcation pseudotime as the max pseudotime in shared cells
-pt_shared <- slingPseudotime(sim)[shared_cells, ]
-bifurcation_pt1 <- max(pt_shared[, "Lineage1"], na.rm = TRUE)
-bifurcation_pt2 <- max(pt_shared[, "Lineage2"], na.rm = TRUE)
-
-shared_coords <- reducedDim(sim)[shared_cells, ]
-
-pre_branch_cells <- which(pt1 <= bifurcation_pt1 & pt2 <= bifurcation_pt2)
-
-post_branch_l1 <- which(pt1 > bifurcation_pt1)
-post_branch_l2 <- which(pt2 > bifurcation_pt2)
-
-# Get weights
-pseudotime <- as.data.frame(colData(sce)$crv)
-
-w1 <- pseudotime[, "cellWeights.Lineage1"]
-w2 <- pseudotime[, "cellWeights.Lineage2"]
-
-# Estimate bifurcation point: cells with similar weights
-shared_cells <- which(abs(w1 - w2) < 0.2 & !is.na(pt1) & !is.na(pt2))
-bifurcation_pt <- max(pmin(pt1[shared_cells], pt2[shared_cells]))
-
-cat("Estimated bifurcation pseudotime:", round(bifurcation_pt, 2), "\n")
-# Estimated bifurcation pseudotime: 13.59 
-
-### Combine scaled expression matrices used in the module detection
-shared_cells <- intersect(colnames(mat1_z), colnames(mat2_z))
-mat1_unique <- mat1_z[, setdiff(colnames(mat1_z), shared_cells)]
-mat2_unique <- mat2_z[, setdiff(colnames(mat2_z), shared_cells)]
-shared_expr <- mat1_z[, shared_cells]
-combined_expr_matrix <- cbind(mat1_unique, mat2_unique, shared_expr)
-
-# Shared aging trajectory
-cells_pre <- which(pt1 <= bifurcation_pt & pt2 <= bifurcation_pt)
-
-# Sublineage-specific post-bifurcation
-cells_post_l1 <- which(pt1 > bifurcation_pt)
-cells_post_l2 <- which(pt2 > bifurcation_pt)
-
-# Filter expression matrices
-mat_pre <- combined_expr_matrix[, cells_pre]
-mat_l1 <- combined_expr_matrix[, cells_post_l1]
-mat_l2 <- combined_expr_matrix[, cells_post_l2]
-
-pt_pre <- pt1[cells_pre]
-pt_l1 <- pt1[cells_post_l1]
-pt_l2 <- pt2[cells_post_l2]
-
-################################################################################
-make_elbow_plot <- function(expression_matrix, pseudotime, 
-                            sd_threshold = 0.90, nbins = 100, max_pcs = 15) {
-  
-  # Prepare data (same as your main function)
-  row_sds <- matrixStats::rowSds(expression_matrix, na.rm = TRUE)
-  names(row_sds) <- rownames(expression_matrix)
-  sd_thresh <- quantile(row_sds, sd_threshold, na.rm = TRUE)
-  variable_genes <- names(row_sds)[row_sds > sd_thresh]
-  
-  # FIX: Only keep genes that actually exist in the matrix
-  variable_genes <- intersect(variable_genes, rownames(expression_matrix))
-  cat("Using", length(variable_genes), "variable genes (top", (1-sd_threshold)*100, "%)\n")
-  
-  mat_sub <- expression_matrix[variable_genes, ]
-  
-  # Bin cells by pseudotime
-  bin_id <- cut(pseudotime, breaks = nbins, labels = FALSE)
-  bin_list <- split(seq_along(bin_id), bin_id)
-  bin_list <- bin_list[lengths(bin_list) > 0]
-  
-  binned_mat <- sapply(bin_list, function(ix) {
-    rowMeans(mat_sub[, ix, drop = FALSE], na.rm = TRUE)
-  })
-  
-  # Run PCA
-  pca_result <- prcomp(binned_mat, center = TRUE, scale. = TRUE)
-  
-  # Get variance explained
-  variance_explained <- summary(pca_result)$importance[2, ]
-  cumulative_var <- summary(pca_result)$importance[3, ]
-  
-  # Create data frame
-  pc_df <- data.frame(
-    PC = 1:min(max_pcs, length(variance_explained)),
-    VarianceExplained = variance_explained[1:min(max_pcs, length(variance_explained))],
-    CumulativeVariance = cumulative_var[1:min(max_pcs, length(variance_explained))]
-  )
-  
-  # Create elbow plot
-  p1 <- ggplot(pc_df, aes(x = PC, y = VarianceExplained)) +
-    geom_line(color = "steelblue", size = 1.2) +
-    geom_point(color = "steelblue", size = 3) +
-    labs(title = "Scree Plot - Variance Explained by Each PC",
-         x = "Principal Component", 
-         y = "Proportion of Variance Explained") +
-    theme_minimal() +
-    scale_x_continuous(breaks = pc_df$PC) +
-    theme(plot.title = element_text(hjust = 0.5))
-  
-  p2 <- ggplot(pc_df, aes(x = PC, y = CumulativeVariance)) +
-    geom_line(color = "darkgreen", size = 1.2) +
-    geom_point(color = "darkgreen", size = 3) +
-    geom_hline(yintercept = c(0.8, 0.9), linetype = "dashed", alpha = 0.6, color = "red") +
-    labs(title = "Cumulative Variance Explained",
-         x = "Principal Component", 
-         y = "Cumulative Proportion") +
-    theme_minimal() +
-    scale_x_continuous(breaks = pc_df$PC) +
-    annotate("text", x = max(pc_df$PC)*0.7, y = c(0.8, 0.9), 
-             label = c("80%", "90%"), vjust = -0.5, color = "red") +
-    theme(plot.title = element_text(hjust = 0.5))
-  
-  # Print recommendations
-  pcs_80 <- which(cumulative_var >= 0.80)[1]
-  pcs_90 <- which(cumulative_var >= 0.90)[1]
-  
-  cat("PCA Variance Summary:\n")
-  cat("- For 80% variance:", pcs_80, "PCs\n")
-  cat("- For 90% variance:", pcs_90, "PCs\n")
-  
-  # Fix the elbow calculation to avoid potential errors
-  if(length(variance_explained) >= 3) {
-    elbow_pc <- which.max(diff(diff(variance_explained[1:min(10, length(variance_explained))]))) + 1
-    cat("- Elbow appears around PC", elbow_pc, "\n")
-  }
-  
-  # Combine plots
-  combined_plot <- p1 / p2
-  
-  return(list(
-    variance_df = pc_df,
-    elbow_plot = combined_plot,
-    recommended_pcs_80 = pcs_80,
-    recommended_pcs_90 = pcs_90
-  ))
-}
-
-###
-
-elbow_results_pt_pre <- make_elbow_plot(mat_pre, pt_pre)
-elbow_results_pt_pre$elbow_plot
-
-###
-identify_pseudotime_modules_pca <- function(expression_matrix, pseudotime, 
-                                            lineage_name = "Lineage", 
-                                            nbins = 100, 
-                                            min_genes = 10, 
-                                            sd_threshold = 0.90,
-                                            perc_expr = 5,
-                                            n_pcs = 5) {
-  
-  cat("Processing", lineage_name, "with", ncol(expression_matrix), "cells and", nrow(expression_matrix), "genes\n")
-  
-  row_sds <- matrixStats::rowSds(expression_matrix, na.rm = TRUE)
-  names(row_sds) <- rownames(expression_matrix)
-  sd_thresh <- quantile(row_sds, sd_threshold, na.rm = TRUE)
-  variable_genes <- names(row_sds)[row_sds > sd_thresh]
-  variable_genes <- intersect(variable_genes, rownames(expression_matrix))
-  
-  cat("Using", length(variable_genes), "variable genes (top", (1 - sd_threshold) * 100, "%)\n")
-  
-  mat_sub <- expression_matrix[variable_genes, ]
-  
-  bin_id <- cut(pseudotime, breaks = nbins, labels = FALSE)
-  bin_list <- split(seq_along(bin_id), bin_id)
-  bin_list <- bin_list[lengths(bin_list) > 0]
-  cat("Created", length(bin_list), "non-empty pseudotime bins\n")
-  
-  binned_mat <- sapply(bin_list, function(ix) {
-    rowMeans(mat_sub[, ix, drop = FALSE], na.rm = TRUE)
-  })
-  rownames(binned_mat) <- rownames(mat_sub)
-  
-  pca_result <- prcomp(binned_mat, center = TRUE, scale. = TRUE)
-  coords <- pca_result$x[, 1:min(n_pcs, ncol(pca_result$x))]
-  
-  cat("PCA variance explained by first", ncol(coords), "PCs:", 
-      round(sum(summary(pca_result)$importance[2, 1:ncol(coords)]) * 100, 1), "%\n")
-  
-  dist_mat <- dist(coords)
-  hc <- hclust(dist_mat, method = "ward.D2")
-  
-  modules_raw <- dynamicTreeCut::cutreeDynamic(
-    dendro = hc,
-    distM = as.matrix(dist_mat),
-    deepSplit = 2,
-    minClusterSize = min_genes
-  )
-  names(modules_raw) <- rownames(coords)
-  
-  module_list <- split(names(modules_raw), modules_raw)
-  module_list <- module_list[names(module_list) != "0"]
-  
-  # Optional filtering by % expression
-  if (file.exists("Lineage1_sling_perc_expr.tsv")) {
-    perc_df <- readr::read_tsv("Lineage1_sling_perc_expr.tsv", show_col_types = FALSE)
-    names(perc_df)[1:2] <- c("gene", "pct_expr")
-    perc_cutoff <- perc_expr
-    expr_pct_vec <- setNames(perc_df$pct_expr, perc_df$gene)
-    module_list <- lapply(module_list, function(glist) {
-      glist[glist %in% names(expr_pct_vec) & expr_pct_vec[glist] >= perc_cutoff]
-    })
-  }
-  
-  module_list <- Filter(function(g) length(g) >= min_genes, module_list)
-  cat("Found", length(module_list), "modules with >=", min_genes, "genes\n")
-  cat("Module sizes:", sapply(module_list, length), "\n")
-  
-  module_df <- data.frame(
-    gene = names(modules_raw),
-    module = modules_raw,
-    lineage = lineage_name,
-    stringsAsFactors = FALSE
-  )
-  
-  mean_expr_modules <- sapply(module_list, function(genes) {
-    genes <- intersect(genes, rownames(mat_sub))
-    if (length(genes) > 0) {
-      colMeans(mat_sub[genes, , drop = FALSE], na.rm = TRUE)
-    } else {
-      rep(NA, ncol(mat_sub))
-    }
-  })
-  
-  df_plot <- data.frame(
-    pseudotime = pseudotime,
-    mean_expr_modules
-  )
-  
-  df_long <- tidyr::pivot_longer(df_plot, cols = -pseudotime, 
-                                 names_to = "Module", values_to = "Expression")
-  df_long$Module <- paste0(lineage_name, "_M", df_long$Module)
-  
-  return(list(
-    modules = module_list,
-    module_df = module_df,
-    binned_matrix = binned_mat,
-    pca_result = pca_result,
-    plot_data = df_long,
-    mean_expr_modules = mean_expr_modules
-  ))
-}
-###
-
-results_pre <- identify_pseudotime_modules_pca(
-  expression_matrix = mat_pre,
-  pseudotime = pt_pre,
-  lineage_name = "PreBifurcation",
-  nbins = 50,
-  min_genes = 200,
-  perc_expr = 10,
-  sd_threshold = 0.90,
-  n_pcs = 3
-)
-
-###
-# Assuming `ego_pre` is your list of enrichGO results per module
-get_module_names_from_go <- function(ego_list) {
-  module_names <- sapply(names(ego_list), function(mod_id) {
-    ego <- ego_list[[mod_id]]
-    if (!is.null(ego) && nrow(ego@result) > 0) {
-      top_term <- ego@result %>% 
-        dplyr::filter(p.adjust < 0.05) %>%
-        dplyr::slice_min(p.adjust, n = 1) %>%
-        dplyr::pull(Description)
-      if (length(top_term) > 0) return(top_term)
-    }
-    return(NA)
-  })
-  names(module_names) <- paste0("Module_", names(module_names))
-  return(module_names)
-}
-###
-# Function for GO enrichment analysis
-perform_go_enrichment <- function(module_list, lineage_name = "Lineage", 
-                                  org_db = org.Hs.eg.db, ont = "BP") {
-  
-  cat("Performing GO enrichment for", length(module_list), "modules in", lineage_name, "\n")
-  
-  ego_list <- list()
-  
-  for (i in seq_along(module_list)) {
-    module_name <- names(module_list)[i]
-    if(is.null(module_name)) module_name <- i
-    
-    cat("Processing module", module_name, "with", length(module_list[[i]]), "genes\n")
-    
-    ego <- enrichGO(
-      gene = module_list[[i]],
-      OrgDb = org_db,
-      keyType = 'SYMBOL',
-      ont = ont,
-      pvalueCutoff = 0.05,
-      pAdjustMethod = 'BH',
-      minGSSize = 10,
-      maxGSSize = 500
-    )
-    
-    if (!is.null(ego) && nrow(ego@result) > 0) {
-      # ego_list[[module_name]] <- simplify(ego)
-      ego_list[[module_name]] <- ego  # Removed simplify()
-      cat("Found", nrow(ego@result), "enriched terms\n")
-    } else {
-      ego_list[[module_name]] <- NULL
-      cat("No enriched terms found\n")
-    }
-  }
-  
-  return(ego_list)
-}
-###
-ego_pre <- perform_go_enrichment(results_pre$modules, "pre")
-
-###
-module_labels <- get_module_names_from_go(ego_pre)
-print(module_labels)
-
-###
-plot_module_trajectories <- function(results, title = NULL, smooth_method = "loess") {
-  
-  if(is.null(title)) {
-    title <- paste("Module Expression Trajectories")
-  }
-  
-  p <- ggplot(results$plot_data, aes(x = pseudotime, y = Expression, color = Module)) +
-    geom_smooth(method = smooth_method, se = FALSE, size = 1.2) +
-    labs(
-      title = title,
-      x = "Pseudotime", 
-      y = "Average Expression (log-normalized)"
-    ) +
-    theme_minimal() +
-    theme(
-      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-      axis.title = element_text(size = 12, face = "bold"),
-      legend.title = element_text(size = 11, face = "bold"),
-      legend.position = "right"
-    ) +
-    guides(color = guide_legend(override.aes = list(size = 2)))
-  
-  return(p)
-}
-###
-library(geomtextpath)
-plot_pre <- plot_module_trajectories(results_pre, "Pre-branching")
-p_pre <- plot_pre +
-  ggpubr::theme_pubr(legend = 'right') +
-  scale_color_manual(
-    labels = c("PreBifurcation_MX1" = "Endocrine Secretion",
-               "PreBifurcation_MX2" = "Mitochondria + Cilium",
-               "PreBifurcation_MX3" = "Chemotaxis + PLA2",
-               "PreBifurcation_MX4" = "MAPK + Fluid Balance"),
-    values = c("PreBifurcation_MX1" = "#E31A1C",
-               "PreBifurcation_MX2" = "#FF7F00",
-               "PreBifurcation_MX3" = "#999999",
-               "PreBifurcation_MX4" = "#6A3D9A")) +
-  ylab("Average Expression") + 
-  ylim(-1.5,1.5)+
-  geom_vline(xintercept = round(bifurcation_pt, 2), linetype = "dotted", color = "blue", size = 1.5) +
-  geom_textvline(label = "Pre-bifurcation", xintercept = round(bifurcation_pt, 2), vjust = -0.2,
-                 size = 5, fontface = 'bold') +
-  theme(
-    plot.title = element_text(face = 'bold', size = 16, hjust = 0.5),
-    axis.title.y = element_text(face = 'bold', size = 14),
-    axis.text.x = element_text(face = 'bold', size = 14),
-    axis.text.y = element_text(face = 'bold', size = 14),
-    axis.title.x = element_text(face = 'bold', size = 15),
-    legend.title = element_text(face = 'bold', size = 14),
-    legend.text = element_text(face = 'bold', size = 14)
-  )
-
-###
-
-results_l1 <- identify_pseudotime_modules_pca(
-  expression_matrix = mat_l1,
-  pseudotime = pt_l1,
-  lineage_name = "Lineage1_Post",
-  nbins = 10,
-  min_genes = 200,
-  perc_expr = 10,
-  sd_threshold = 0.90,
-  n_pcs = 3
-)
-
-ego_lin2_1 <- perform_go_enrichment(results_l1$modules, "post_l2_1")
-
-###
-module_labels <- get_module_names_from_go(ego_lin2_1)
-print(module_labels)
-
-###
-
-plot_lin2_1 <- plot_module_trajectories(results_l1, "lineage2_1")
-p2_1 <- plot_lin2_1+
-  ggpubr::theme_pubr(legend = 'right') +
-  scale_color_manual(
-    labels = c("Lineage1_Post_MX1" = "Secretory morphogenesis +\nepithelial remodeling*",
-               "Lineage1_Post_MX2" = "Epithelial Development",
-               "Lineage1_Post_MX3" = "MAPK Signaling",
-               "Lineage1_Post_MX4" = "Ion Homeostasis + Immune Migration"),
-    values = c("Lineage1_Post_MX1" = "#E31A1C",
-               "Lineage1_Post_MX2" = "#FF7F00",
-               "Lineage1_Post_MX3" = "#6A3D9A",
-               "Lineage1_Post_MX4" = "#1F78B4")
-  ) + 
-  xlim(13.2,18) +
-  ylim(-1.5,1.5)+
-  geom_vline(xintercept = round(bifurcation_pt, 2), linetype="dotted", 
-             color = "blue", size=1.5) + 
-  geom_textvline(label = "Post-branching", 
-                 xintercept = round(bifurcation_pt, 2), vjust = -0.3,
-                 size = 5, fontface = 'bold') +
-  ylab(NULL) + 
-  theme(plot.title = element_text(face = 'bold', size = 16,hjust = 0.5),
-        axis.title.y = element_text(face = 'bold', size = 14),
-        axis.text.x =  element_text(face = 'bold', size = 14),
-        axis.text.y = element_text(face = 'bold', size = 14),
-        axis.title.x = element_text(face = 'bold', size = 15),
-        legend.title = element_text(face = 'bold', size = 14),
-        legend.text = element_text(face = 'bold', size = 14))
-
-###
-
-results_l2 <- identify_pseudotime_modules_pca(
-  expression_matrix = mat_l2,
-  pseudotime = pt_l2,
-  lineage_name = "Lineage2_Post",
-  nbins = 10,
-  min_genes = 100,
-  perc_expr = 10,
-  sd_threshold = 0.90,
-  n_pcs = 3
-)
-
-ego_lin2_2 <- perform_go_enrichment(results_l2$modules, "post_l2_2")
-
-###
-module_labels <- get_module_names_from_go(ego_lin2_2)
-print(module_labels)
-
-###
-
-plot_lin2_2 <- plot_module_trajectories(results_l2, "lineage2_2")
-p2_2 <- plot_lin2_2+
-  ylim(-1.5,1.5) +
-  ggpubr::theme_pubr(legend = 'right') +
-  scale_color_manual(
-    labels = c("Lineage2_Post_MX1" = "Proteostasis +\ninnate immune*",
-               "Lineage2_Post_MX2" = "Wound healing",
-               "Lineage2_Post_MX3" = "ER Stress Response",
-               "Lineage2_Post_MX4" = "Cytoplasmic Translation"),
-    values = c("Lineage2_Post_MX1" = "#999999",#"#E31A1C",
-               "Lineage2_Post_MX2" = "#FF7F00",
-               "Lineage2_Post_MX3" = "#1F78B4",
-               "Lineage2_Post_MX4" = "#B15928")
-  ) + 
-  xlim(13.2,18.3) +
-  geom_vline(xintercept = round(bifurcation_pt, 2), linetype="dotted", 
-             color = "blue", size=1.5) + 
-  geom_textvline(label = "Post-branching", 
-                 xintercept = round(bifurcation_pt, 2), vjust = -0.3,
-                 size = 5, fontface = 'bold') +
-  ylab(NULL) + 
-  theme(plot.title = element_text(face = 'bold', size = 16, hjust = 0.5),
-        axis.title.y = element_text(face = 'bold', size = 14),
-        axis.text.x =  element_text(face = 'bold', size = 14),
-        axis.text.y = element_text(face = 'bold', size = 14),
-        axis.title.x = element_text(face = 'bold', size = 15),
-        legend.title = element_text(face = 'bold', size = 14),
-        legend.text = element_text(face = 'bold', size = 14))
-
-### Figure 4I/J/K
-# Cairo::CairoPNG('module_GO_terms.png', width = 23*300,height = 3.5*300,res = 300)
-p_pre | p2_1 | p2_2
-dev.off()
+# Revised analysis is implemented in:
+# Figure4_IJK_tradeSeq_modules_clean.R
+#
+# The revised workflow uses tradeSeq-fitted GAM trajectories, separates the
+# shared pre-bifurcation and lineage-specific post-bifurcation regions, selects
+# module number by silhouette analysis, and performs GO enrichment using the
+# pseudotime-associated gene set as the background.
 
 ################################################################################
 ### 8. Pseudobulk DESeq2 Analysis (Figures 4L)
@@ -1518,8 +1012,9 @@ ggplot(res_filt_2, aes(x = log2FoldChange, y = -log10(padj))) +
         legend.title = element_text(face = 'bold', size = 14),
         legend.text = element_text(face = 'bold', size = 14))
 
+
 ################################################################################
-### 10.                 module scores (Figures 4M-4N)
+### 10.             Cluster violin plots for Figures 4M–4N
 ################################################################################
 
 ### Figure 4M
@@ -1585,7 +1080,7 @@ p1 <- VlnPlot(
     "4" = "#00C094",
     "5" = "#00B6EB"
   )) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.5) +
+  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 1, fill = 'white') +
   ylab("Module Score") +
   theme(
     axis.title.y = element_text(face = "bold", size = 14),
@@ -1609,7 +1104,7 @@ p2 <- VlnPlot(
     "4" = "#00C094",
     "5" = "#00B6EB"
   )) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.5) +
+  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 1, fill = 'white') +
   xlab("Cluster") +
   ylab("Module Score") +
   theme(
@@ -1632,7 +1127,7 @@ p3 <- VlnPlot(
     "4" = "#00C094",
     "5" = "#00B6EB"
   )) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.5) +
+  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 1, fill = 'white') +
   ylab("Module Score") +
   theme(
     axis.title.y = element_text(face = "bold", size = 14),
@@ -1657,7 +1152,7 @@ p4 <- VlnPlot(
   )) +
   xlab("Cluster") +
   ylab("Module Score") +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.5) +
+  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 1, fill = 'white') +
   theme(
     axis.title.y = element_text(face = "bold", size = 14),
     axis.text = element_text(face = "bold", size = 14),
@@ -1668,121 +1163,227 @@ p4 <- VlnPlot(
 
 # (p3/p4) | (p1/p2)
 
-# Extract expression data
-exp <- lin2_obj@meta.data
+################################################################################
+# Lineage-long pseudotime data for Figures 4M–4N
+################################################################################
 
-# Extract pseudotime values and cell weights
-pseudotime <- as.data.frame(colData(sce)$crv)
+score_df <- lin2_obj@meta.data %>%
+  tibble::rownames_to_column("cell") %>%
+  dplyr::select(
+    cell,
+    monocle_clusters2,
+    Core,
+    Maturity,
+    ER_Stress,
+    Exocrine
+  )
 
-# Unified pseudotime assignment
-pseudotime$UnifiedPseudotime <- rep(NA, nrow(pseudotime))
-for (jj in 1:2) {
-  lineage_column <- paste0("cellWeights.Lineage", jj)
-  pseudotime_column <- paste0("pseudotime.Lineage", jj)
-  pseudotime$UnifiedPseudotime[pseudotime[, lineage_column] == 1] <-
-    pseudotime[pseudotime[, lineage_column] == 1, pseudotime_column]
-}
+sce <- readRDS('sce_lin2.rds')
 
-# Normalize pseudotime
-pseudotime$AdjustedPseudotime <- pseudotime$UnifiedPseudotime
-for (lineage in 1:2) {
-  lineage_mask <- pseudotime[, paste0("cellWeights.Lineage", lineage)] == 1
-  min_pseudotime <- min(pseudotime$UnifiedPseudotime[lineage_mask], na.rm = TRUE)
-  max_pseudotime <- max(pseudotime$UnifiedPseudotime[lineage_mask], na.rm = TRUE)
-  pseudotime$AdjustedPseudotime[lineage_mask] <-
-    (pseudotime$UnifiedPseudotime[lineage_mask] - min_pseudotime) /
-    (max_pseudotime - min_pseudotime)
-}
+crv_df <- as.data.frame(
+  colData(sce)$crv
+) %>%
+  tibble::rownames_to_column("cell")
 
-# Assign lineage membership
-pseudotime$Membership <- apply(
-  pseudotime[, c("cellWeights.Lineage1", "cellWeights.Lineage2")], 1,
-  function(weights) {
-    lineages <- c("Lineage2_1", "Lineage2_2")
-    paste0(lineages[weights > 0], collapse = ", ")
-  }
-)
+lin2_1_df <- crv_df %>%
+  dplyr::transmute(
+    cell = cell,
+    Lineage = "Lineage2_1",
+    Pseudotime = pseudotime.Lineage1,
+    weight = cellWeights.Lineage1
+  )
 
-# Assign dominant lineage
-pseudotime$DominantLineage <- apply(
-  pseudotime[, c("cellWeights.Lineage1", "cellWeights.Lineage2")], 1,
-  function(weights) {
-    lineages <- c("Lineage2_1", "Lineage2_2")
-    if (all(weights == 0)) return(NA)
-    lineages[which.max(weights)]
-  }
-)
+lin2_2_df <- crv_df %>%
+  dplyr::transmute(
+    cell = cell,
+    Lineage = "Lineage2_2",
+    Pseudotime = pseudotime.Lineage2,
+    weight = cellWeights.Lineage2
+  )
 
-pseudotime$Cluster <- lin2_obj@meta.data$monocle_clusters2
-pseudotime$Hba1c_class <- lin2_obj@meta.data$Hba1c_class_median
+lineage_long <- dplyr::bind_rows(
+  lin2_1_df,
+  lin2_2_df
+) %>%
+  dplyr::filter(
+    weight > 0,
+    !is.na(Pseudotime)
+  ) %>%
+  dplyr::left_join(
+    score_df,
+    by = "cell"
+  ) %>%
+  dplyr::mutate(
+    Cluster = as.character(monocle_clusters2),
+    Lineage = factor(
+      Lineage,
+      levels = c("Lineage2_1", "Lineage2_2")
+    )
+  )
 
+################################################################################
 # Colors
-point_colors <- c("ND" = "#F8766D", "pre-T2D" = "#FEAF16FF", "T2D" = "#619CFF")
-smoother_colors <- c("Lineage2_1" = "#F62424", "Lineage2_2" = "#ffb300")
+################################################################################
 
-# Module trends along pseudotime
-genes <- c("Core", "Maturity", "ER_Stress", "Exocrine")
+cluster_colors <- c(
+  "1" = "#F8766D",
+  "2" = "#C49A00",
+  "3" = "#53B400",
+  "4" = "#00C094",
+  "5" = "#00B6EB"
+)
+
+smoother_colors <- c(
+  "Lineage2_1" = "#F62424",
+  "Lineage2_2" = "#ffb300"
+)
+
+################################################################################
+# Module-score trends along pseudotime
+################################################################################
+
+genes <- c(
+  "Core",
+  "Maturity",
+  "ER_Stress",
+  "Exocrine"
+)
+
 l <- c(3, 2, 2, 2.5)
 
 plt_list <- list()
-i <- 1
-for (gene in genes) {
-  plt_data <- data.frame(
-    AdjustedPseudotime = pseudotime$AdjustedPseudotime,
-    Membership = pseudotime$Membership,
-    DominantLineage = pseudotime$DominantLineage,
-    Cluster = pseudotime$Cluster,
-    HbA1c_class = pseudotime$Hba1c_class,
-    gene = exp[, gene]
-  )
 
-  p <- ggplot(plt_data, aes(x = AdjustedPseudotime, y = gene)) +
-    geom_point(aes(color = HbA1c_class), size = 0.6, alpha = 0.2) +
-    geom_smooth(
-      data = subset(plt_data, grepl("Lineage2_1", Membership)),
-      aes(group = "Lineage2_1"),
-      size = 2, color = smoother_colors["Lineage2_1"],
-      se = FALSE, method = "lm",
-      formula = y ~ splines::ns(x, df = 3)
+for (i in seq_along(genes)) {
+  
+  gene <- genes[i]
+  
+  plt_data <- lineage_long %>%
+    dplyr::transmute(
+      cell = cell,
+      Pseudotime = Pseudotime,
+      Lineage = Lineage,
+      weight = weight,
+      Cluster = Cluster,
+      score = .data[[gene]]
+    )
+  
+  p <- ggplot(
+    plt_data,
+    aes(
+      x = Pseudotime,
+      y = score
+    )
+  ) +
+    geom_point(
+      aes(
+        color = Cluster,
+        alpha = weight
+      ),
+      size = 0.6
     ) +
     geom_smooth(
-      data = subset(plt_data, grepl("Lineage2_2", Membership)),
-      aes(group = "Lineage2_2"),
-      size = 2, color = smoother_colors["Lineage2_2"],
-      se = FALSE, method = "lm",
+      data = subset(
+        plt_data,
+        Lineage == "Lineage2_1"
+      ),
+      aes(
+        group = Lineage,
+        weight = weight
+      ),
+      linewidth = 2,
+      color = smoother_colors["Lineage2_1"],
+      se = FALSE,
+      method = "lm",
       formula = y ~ splines::ns(x, df = 3)
     ) +
-    coord_cartesian(ylim = c(-0.5, l[i])) +
+    
+    geom_smooth(
+      data = subset(
+        plt_data,
+        Lineage == "Lineage2_2"
+      ),
+      aes(
+        group = Lineage,
+        weight = weight
+      ),
+      linewidth = 2,
+      color = smoother_colors["Lineage2_2"],
+      se = FALSE,
+      method = "lm",
+      formula = y ~ splines::ns(x, df = 3)
+    ) +
+    
     scale_color_manual(
-      name = "HbA1c class",
-      values = c("ND" = "#F8766D", "pre-T2D" = "#FEAF16FF", "T2D" = "#619CFF")
+      name = "Cluster",
+      values = cluster_colors,
+      breaks = c("1", "4", "3", "5", "2")
     ) +
-    labs(x = "Pseudotime", y = gene) +
-    ggpubr::theme_pubr(legend = "right") +
+    
+    scale_alpha_continuous(
+      range = c(0.05, 0.25),
+      guide = "none"
+    ) +
+    
+    coord_cartesian(
+      ylim = c(-0.5, l[i])
+    ) +
+    
+    labs(
+      x = "Pseudotime",
+      y = gene
+    ) +
+    ggpubr::theme_pubr(
+      legend = "right"
+    ) +
     theme(
       axis.text.x = element_blank(),
       axis.ticks.x = element_blank(),
-      axis.title.y = element_text(face = "bold", size = 14),
-      plot.title = element_text(face = "bold", size = 14),
-      axis.text = element_text(face = "bold", size = 14),
-      axis.title.x = element_text(face = "bold", size = 14),
-      legend.title = element_text(face = "bold", size = 14),
-      legend.text = element_text(face = "bold", size = 14)
+      axis.title.y = element_text(
+        face = "bold",
+        size = 14
+      ),
+      axis.text = element_text(
+        face = "bold",
+        size = 14
+      ),
+      axis.title.x = element_text(
+        face = "bold",
+        size = 14
+      ),
+      legend.title = element_text(
+        face = "bold",
+        size = 14
+      ),
+      legend.text = element_text(
+        face = "bold",
+        size = 14
+      )
     ) +
-    guides(color = guide_legend(override.aes = list(size = 3, alpha = 1)))
-
+    
+    guides(
+      color = guide_legend(
+        override.aes = list(
+          size = 3,
+          alpha = 1
+        )
+      )
+    )
+  
   plt_list[[gene]] <- p
-  i <- i + 1
 }
 
-P <- wrap_plots(plt_list, guides = "collect", ncol = 2)
+P <- wrap_plots(
+  plt_list,
+  guides = "collect",
+  ncol = 2
+)
 
 # Figure 4M-4N composite
 (p3 | P[[1]] + NoLegend()) / (p4 | P[[2]] + NoLegend()) |
   (p1 | P[[3]] + NoLegend()) / (p2 | P[[4]] + NoLegend())
 
 ################################################################################
-### 11. Dot plot C2 vs C5 (Figure S6J)
+### 11. Dot plot C2 vs C5 (Figure S6H)
 ################################################################################
 
 SCpubr::do_DotPlot(
@@ -1809,7 +1410,7 @@ SCpubr::do_DotPlot(
   )
 
 ################################################################################
-### 12. Dot plot C5 male vs female (Figure S6K)
+### 12. Dot plot C5 male vs female (Figure S6I)
 ################################################################################
 
 C5 <- subset(lin2_obj, subset = monocle_clusters2 == "5")
@@ -1822,11 +1423,11 @@ table(C5$Gender, useNA = "ifany")
 markers <- list(
   "Exocrine markers" = c("PRSS1", "PRSS2", "CPA1", "CPB1", "CTRB1",
                          "CTRB2", "REG1A", "REG1B", "SPINK1"),
-  "EIF2A markers" = c("ESR1", "PPP1R15A", "PPP1R15B", "HSPA5", "DDIT3", "ATF4",
+  "EIF2α markers" = c("ESR1", "PPP1R15A", "PPP1R15B", "HSPA5", "DDIT3", "ATF4",
                       "EIF2B2", "EIF2S1", "EIF2AK3")
 )
 
-# Figure S6K
+# Figure S6I
 SCpubr::do_DotPlot(
   C5,
   features = markers,
@@ -1851,98 +1452,498 @@ SCpubr::do_DotPlot(
   )
 
 ################################################################################
-### 13. Meta-data association with C2 and C5 (Figure 4O)
+### Figure 4O — donor-level C2/C5 trait associations
 ################################################################################
 
-metadata <- lin2_obj@meta.data[, c(
-  "orig.ident", "monocle_clusters2", "Age", "BMI", "Hba1c", "Gender", "Ethnicity"
-)]
+# Revised donor-level analysis addressing Reviewer 1 Comment 9 and
+# Reviewer 2 Comment 15 is implemented in:
+# Figure4O_C2_C5_donor_traits_clean.R
 
-# Aggregate proportions per donor
-cluster_props <- table(metadata$orig.ident, metadata$monocle_clusters2) %>%
-  prop.table(margin = 1) %>%
-  as.data.frame()
-names(cluster_props) <- c("orig.ident", "cluster", "proportion")
+################################################################################
+### Figure 4P — IF donor sample meta data
+################################################################################
 
-# Merge with metadata
-donor_data <- merge(
-  cluster_props,
-  unique(metadata[, c("orig.ident", "Age", "BMI", "Hba1c", "Gender", "Ethnicity")]),
-  by = "orig.ident"
-)
+library(flextable)
+library(dplyr)
+library(officer)
 
-# Correlations
-cor.test(
-  donor_data$BMI[donor_data$cluster == "2"],
-  donor_data$proportion[donor_data$cluster == "2"]
-)
-cor.test(
-  donor_data$BMI[donor_data$cluster == "5"],
-  donor_data$proportion[donor_data$cluster == "5"]
-)
-cor.test(
-  donor_data$Age[donor_data$cluster == "5"],
-  donor_data$proportion[donor_data$cluster == "5"]
-)
-cor.test(
-  donor_data$Age[donor_data$cluster == "2"],
-  donor_data$proportion[donor_data$cluster == "2"]
-)
-cor.test(
-  donor_data$Hba1c[donor_data$cluster == "5"],
-  donor_data$proportion[donor_data$cluster == "5"]
-)
-cor.test(
-  donor_data$Hba1c[donor_data$cluster == "2"],
-  donor_data$proportion[donor_data$cluster == "2"]
+# Figure 4P donor table
+donor_table <- tibble::tribble(
+  ~`Donor ID`, ~`Age (years)`, ~Gender, ~`BMI (kg/m²)`, ~`Disease status`, ~`Years of diabetes`,
+  "ND00202",   55,             "F",     25.00,          "ND",              "–",
+  "ND09258",   96,             "F",     21.46,          "ND",              "–",
+  "ND11183",   46,             "F",     22.90,          "ND",              "–",
+  "ND13069",   46,             "M",     27.10,          "ND",              "–",
+  "ND15112",   70,             "F",     42.20,          "T2D",             "6",
+  "ND14070",   66,             "M",     30.40,          "T2D",             "18",
+  "ND09756",   62,             "M",     32.69,          "T2D",             "20",
+  "ND18553",   67,             "M",     26.40,          "T2D",             "30",
+  "ND08838",   82,             "F",     31.27,          "T2D",             "32"
 )
 
-# Gender t tests
-t.test(proportion ~ Gender, data = donor_data[donor_data$cluster == "2", ])
-t.test(proportion ~ Gender, data = donor_data[donor_data$cluster == "5", ])
 
-# Ethnicity Kruskal Wallis
-kruskal.test(proportion ~ Ethnicity, data = donor_data[donor_data$cluster == "5", ])
-kruskal.test(proportion ~ Ethnicity, data = donor_data[donor_data$cluster == "2", ])
+ft <- flextable::flextable(donor_table) %>%
+  flextable::theme_box() %>%
+  flextable::bg(bg = "#D9D9D9", part = "header") %>%
+  flextable::bg(bg = "white", part = "body") %>%
+  flextable::color(color = "black", part = "all") %>%
+  flextable::bold(part = "header") %>%
+  flextable::align(align = "center", part = "all") %>%
+  flextable::valign(valign = "center", part = "all") %>%
+  flextable::fontsize(size = 10, part = "all") %>%
+  flextable::padding(padding = 3, part = "all") %>%
+  flextable::border_outer(
+    border = officer::fp_border(color = "#7F7F7F", width = 1)
+  ) %>%
+  flextable::border_inner_h(
+    border = officer::fp_border(color = "#A6A6A6", width = 0.75)
+  ) %>%
+  flextable::border_inner_v(
+    border = officer::fp_border(color = "#A6A6A6", width = 0.75)
+  ) %>%
+  flextable::autofit()
 
-# Figure 4O table
-stats_table <- data.frame(
-  Metadata = c(
-    "BMI", "BMI", "Age", "Age", "HbA1c", "HbA1c",
-    "Gender (male)", "Gender (male)", "Ethnicity", "Ethnicity"
+ft
+
+###############################################################################
+# SOURCE DATA EXPORT — Figure 4 and Figure S6
+###############################################################################
+
+source_dir <- "../SourceData/Figure4_S6"
+dir.create(source_dir, recursive = TRUE, showWarnings = FALSE)
+
+
+###############################################################################
+# Figure 4B, 4E, 4F, S6A and S6C
+# Shared UMAP coordinates + plotted annotations
+###############################################################################
+
+umap_source <- as.data.frame(
+  SingleCellExperiment::reducedDims(cds)$UMAP
+)
+
+colnames(umap_source)[1:2] <- c("UMAP_1", "UMAP_2")
+
+umap_source <- umap_source %>%
+  tibble::rownames_to_column("cell_id")
+
+cds_meta_source <- as.data.frame(
+  SummarizedExperiment::colData(cds)
+) %>%
+  tibble::rownames_to_column("cell_id") %>%
+  dplyr::select(
+    cell_id,
+    dplyr::any_of(c(
+      "monocle_clusters2",
+      "Study",
+      "Condition",
+      "Lineage2_1",
+      "Lineage2_2"
+    ))
+  )
+
+fig4_umap_source <- umap_source %>%
+  dplyr::left_join(
+    cds_meta_source,
+    by = "cell_id"
+  )
+
+readr::write_tsv(
+  fig4_umap_source,
+  file.path(
+    source_dir,
+    "Fig4B_E_F_S6A_C_UMAP.tsv.gz"
+  )
+)
+
+
+###############################################################################
+# Slingshot curves shown in Figure 4B
+###############################################################################
+
+fig4_slingshot_source <- combined_lineages %>%
+  dplyr::select(
+    lineage,
+    path_id,
+    Dim_1,
+    Dim_2
+  )
+
+readr::write_tsv(
+  fig4_slingshot_source,
+  file.path(
+    source_dir,
+    "Fig4B_slingshot_curves.tsv"
+  )
+)
+
+
+###############################################################################
+# Figures 4C and 4D
+# Cell-weighted age and BMI distributions
+###############################################################################
+
+fig4cd_source <- df %>%
+  tibble::rownames_to_column("cell_id") %>%
+  dplyr::select(
+    cell_id,
+    monocle_clusters2,
+    Age,
+    BMI
+  )
+
+readr::write_tsv(
+  fig4cd_source,
+  file.path(
+    source_dir,
+    "Fig4C_D_age_BMI.tsv.gz"
+  )
+)
+
+
+###############################################################################
+# Figures S6B and S6D
+# Study and condition composition
+###############################################################################
+
+s6b_source <- df %>%
+  dplyr::count(
+    monocle_clusters2,
+    Study,
+    name = "cell_count"
+  ) %>%
+  dplyr::group_by(monocle_clusters2) %>%
+  dplyr::mutate(
+    proportion = cell_count / sum(cell_count),
+    variable = "Study",
+    category = as.character(Study)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(
+    cluster = monocle_clusters2,
+    variable,
+    category,
+    cell_count,
+    proportion
+  )
+
+s6d_source <- df %>%
+  dplyr::count(
+    monocle_clusters2,
+    Condition,
+    name = "cell_count"
+  ) %>%
+  dplyr::group_by(monocle_clusters2) %>%
+  dplyr::mutate(
+    proportion = cell_count / sum(cell_count),
+    variable = "Condition",
+    category = as.character(Condition)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(
+    cluster = monocle_clusters2,
+    variable,
+    category,
+    cell_count,
+    proportion
+  )
+
+readr::write_tsv(
+  dplyr::bind_rows(
+    s6b_source,
+    s6d_source
   ),
-  Cluster = c("C2", "C5", "C2", "C5", "C2", "C5", "C2", "C5", "C2", "C5"),
-  Test = c(
-    "Pearson", "Pearson", "Pearson", "Pearson", "Pearson", "Pearson",
-    "t-test", "t-test", "Kruskal-Wallis", "Kruskal-Wallis"
-  ),
-  Statistic = c("0.236", "-0.186", "0.086", "0.074", "0.178", "0.216",
-                "t=0.741", "t=-2.346", "chi^2=0.892", "chi^2=1.398"),
-  P_value = c("0.0285", "0.0868", "0.4146", "0.4858", "0.1977", "0.1169",
-              "0.4609", "0.0219", "0.8273", "0.7060"),
-  CI_95 = c(
-    "0.026 to 0.427", "-0.383 to 0.027", "-0.121 to 0.286", "-0.133 to 0.274",
-    "-0.094 to 0.426", "-0.055 to 0.457", "-0.056 to 0.122", "-0.119 to -0.010",
-    "-", "-"
-  ),
-  stringsAsFactors = FALSE
+  file.path(
+    source_dir,
+    "FigS6B_D_composition.tsv"
+  )
 )
 
-stats_table %>%
-  flextable() %>%
-  autofit() %>%
-  merge_v(j = "Metadata") %>%
-  colformat_double(big.mark = ",", digits = 0, j = "Metadata") %>%
-  colformat_num(j = c("Statistic", "P_value", "CI_95"), digits = 3) %>%
-  bg(i = ~ Cluster == "C2", bg = "#f0f0f0", part = "body") %>%
-  bg(i = ~ Cluster == "C5", bg = "#FFFFFF", part = "body") %>%
-  bg(bg = "#f0f0f0", part = "header") %>%
-  bold(bold = TRUE, part = "header") %>%
-  hline(part = "all", border = fp_border(color = "black")) %>%
-  align(j = "Metadata", align = "center", part = "body")
+
+###############################################################################
+# Figures 4G and 4H
+# INS expression versus pseudotime
+###############################################################################
+
+ins_l21 <- Seurat::GetAssayData(
+  lin2_1,
+  assay = "RNA",
+  layer = "data"
+)["INS", ]
+
+ins_l22 <- Seurat::GetAssayData(
+  lin2_2,
+  assay = "RNA",
+  layer = "data"
+)["INS", ]
+
+fig4g_source <- data.frame(
+  cell_id = colnames(lin2_1),
+  lineage = "Lineage2_1",
+  pseudotime = lin2_1@meta.data[
+    colnames(lin2_1),
+    "Lineage2_1"
+  ],
+  cluster = lin2_1@meta.data[
+    colnames(lin2_1),
+    "monocle_clusters2"
+  ],
+  INS = as.numeric(
+    ins_l21[colnames(lin2_1)]
+  )
+)
+
+fig4h_source <- data.frame(
+  cell_id = colnames(lin2_2),
+  lineage = "Lineage2_2",
+  pseudotime = lin2_2@meta.data[
+    colnames(lin2_2),
+    "Lineage2_2"
+  ],
+  cluster = lin2_2@meta.data[
+    colnames(lin2_2),
+    "monocle_clusters2"
+  ],
+  INS = as.numeric(
+    ins_l22[colnames(lin2_2)]
+  )
+)
+
+readr::write_tsv(
+  dplyr::bind_rows(
+    fig4g_source,
+    fig4h_source
+  ),
+  file.path(
+    source_dir,
+    "Fig4G_H_INS_pseudotime.tsv.gz"
+  )
+)
+
+
+###############################################################################
+# Figures S6F and S6G
+# Exact GSEA terms plotted
+###############################################################################
+
+s6f_ids <- c(
+  "GO:1901700",
+  "GO:0045595",
+  "GO:0002250",
+  "GO:0042127",
+  "GO:0010038",
+  "GO:0006873"
+)
+
+s6g_ids <- c(
+  "GO:0032940",
+  "GO:0009725",
+  "GO:1901700",
+  "GO:0010628",
+  "GO:0042127",
+  "GO:0016042"
+)
+
+s6f_source <- as.data.frame(gse@result) %>%
+  dplyr::filter(ID %in% s6f_ids) %>%
+  dplyr::mutate(panel = "S6F_Lineage2_1")
+
+s6g_source <- as.data.frame(gse2_2@result) %>%
+  dplyr::filter(ID %in% s6g_ids) %>%
+  dplyr::mutate(panel = "S6G_Lineage2_2")
+
+readr::write_tsv(
+  dplyr::bind_rows(
+    s6f_source,
+    s6g_source
+  ),
+  file.path(
+    source_dir,
+    "FigS6F_G_GSEA.tsv"
+  )
+)
+
+
+###############################################################################
+# Figures 4I–4K
+# Already generated by Figure4_IJK_tradeSeq_modules_clean.R
+###############################################################################
+
+ijk_dir <- "Figure4_IJK_tradeSeq_outputs"
+
+ijk_files <- c(
+  "Figure4I_module_trajectory_source_data.tsv",
+  "Figure4J_module_trajectory_source_data.tsv",
+  "Figure4K_module_trajectory_source_data.tsv",
+  "Figure4I_tradeSeq_prebranch_modules.tsv",
+  "Figure4J_tradeSeq_Lineage2_1_modules.tsv",
+  "Figure4K_tradeSeq_Lineage2_2_modules.tsv",
+  "Figure4I-K_module_annotations.tsv"
+)
+
+for (f in ijk_files) {
+  
+  src <- file.path(ijk_dir, f)
+  
+  if (file.exists(src)) {
+    file.copy(
+      src,
+      file.path(source_dir, f),
+      overwrite = TRUE
+    )
+  } else {
+    warning("Missing existing source-data file: ", src)
+  }
+}
+
+
+###############################################################################
+# Figure 4L
+# Pseudobulk DESeq2 volcano plot
+###############################################################################
+
+readr::write_tsv(
+  res_filt_2,
+  file.path(
+    source_dir,
+    "Fig4L_pseudobulk_DE.tsv"
+  )
+)
+
+
+###############################################################################
+# Figures 4M–4N
+# Cell-level module scores used for violin plots
+###############################################################################
+
+fig4mn_violin_source <- lin2_obj@meta.data %>%
+  tibble::rownames_to_column("cell_id") %>%
+  dplyr::select(
+    cell_id,
+    monocle_clusters2,
+    Core,
+    Maturity,
+    ER_Stress,
+    Exocrine
+  )
+
+readr::write_tsv(
+  fig4mn_violin_source,
+  file.path(
+    source_dir,
+    "Fig4M_N_module_scores.tsv.gz"
+  )
+)
+
+
+###############################################################################
+# Figures 4M–4N
+# Module-score trajectories versus pseudotime
+###############################################################################
+
+fig4mn_trajectory_source <- lineage_long %>%
+  dplyr::select(
+    cell,
+    Lineage,
+    Pseudotime,
+    weight,
+    Cluster,
+    Core,
+    Maturity,
+    ER_Stress,
+    Exocrine
+  )
+
+readr::write_tsv(
+  fig4mn_trajectory_source,
+  file.path(
+    source_dir,
+    "Fig4M_N_module_pseudotime.tsv.gz"
+  )
+)
+
+
+###############################################################################
+# Figure S6H
+# Dot plot: C2 versus C5
+###############################################################################
+
+s6h_genes <- unique(unlist(modules))
+
+s6h_obj <- subset(
+  lin2_obj,
+  subset = monocle_clusters2 %in% c("2", "5")
+)
+
+s6h_source <- Seurat::DotPlot(
+  s6h_obj,
+  features = s6h_genes,
+  group.by = "monocle_clusters2"
+)$data %>%
+  as.data.frame() %>%
+  dplyr::rename(
+    cluster = id,
+    gene = features.plot,
+    pct_expressing = pct.exp,
+    average_expression = avg.exp,
+    scaled_average_expression = avg.exp.scaled
+  )
+
+readr::write_tsv(
+  s6h_source,
+  file.path(
+    source_dir,
+    "FigS6H_dotplot.tsv"
+  )
+)
+
+
+###############################################################################
+# Figure S6I
+# Dot plot: male versus female C5 cells
+###############################################################################
+
+s6i_genes <- unique(unlist(markers))
+
+s6i_source <- Seurat::DotPlot(
+  C5,
+  features = s6i_genes,
+  group.by = "Gender"
+)$data %>%
+  as.data.frame() %>%
+  dplyr::rename(
+    gender = id,
+    gene = features.plot,
+    pct_expressing = pct.exp,
+    average_expression = avg.exp,
+    scaled_average_expression = avg.exp.scaled
+  )
+
+readr::write_tsv(
+  s6i_source,
+  file.path(
+    source_dir,
+    "FigS6I_dotplot.tsv"
+  )
+)
+
+
+###############################################################################
+# Figure 4P
+# Donor metadata table
+###############################################################################
+
+readr::write_tsv(
+  donor_table,
+  file.path(
+    source_dir,
+    "Fig4P_IF_donor_metadata.tsv"
+  )
+)
 
 ###############################################################################
 # sessionInfo()
 ###############################################################################
+
 
 

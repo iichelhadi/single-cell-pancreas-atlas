@@ -2,11 +2,11 @@
 # Project: Pancreas scRNA atlas — figures 1 and S1
 # File: Figure1_S1.R
 # Author: Elhadi Iich
-# Date: 2025-08-27
+# Date: 2026-09-07
 #
 # Description:
 #   Reproducible plotting script that generates main and supplemental figures
-#   from an integrated Seurat object. Code below is preserved verbatim.
+#   from an integrated Seurat object.
 #
 # Input:
 #   - scRNA_integrated_harmony_classified.rds
@@ -376,6 +376,266 @@ VlnPlot_scCustom(
   theme(axis.text.x = element_text(angle = 0, hjust = 0.5))+
   scale_x_discrete(limits = factor(1:12))
 
+
+###############################################################################
+# SOURCE DATA EXPORT — Figure 1 and Figure S1
+###############################################################################
+
+source_dir <- "../../SourceData/Figure1_S1"
+dir.create(source_dir, recursive = TRUE, showWarnings = FALSE)
+
+###############################################################################
+# Fig 1A, Fig 1B, Fig S1D, S1G, S1H, S1K
+#
+# One shared cell-level table:
+# UMAP coordinates + annotations + marker expression
+###############################################################################
+
+umap_df <- as.data.frame(
+  Seurat::Embeddings(merged_seurat, reduction = "umap_harmony")
+)
+
+colnames(umap_df)[1:2] <- c("UMAP_1", "UMAP_2")
+umap_df$cell_id <- rownames(umap_df)
+
+meta_source <- merged_seurat@meta.data %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("cell_id") %>%
+  dplyr::select(
+    cell_id,
+    assigned_label,
+    RNA_snn_res.0.2,
+    study,
+    Platform,
+    Condition
+  )
+
+expression_source <- Seurat::FetchData(
+  merged_seurat,
+  vars = myfeatures
+) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("cell_id")
+
+fig1_umap_source <- umap_df %>%
+  dplyr::left_join(meta_source, by = "cell_id") %>%
+  dplyr::left_join(expression_source, by = "cell_id")
+
+readr::write_tsv(
+  fig1_umap_source,
+  file.path(
+    source_dir,
+    "Fig1A_B_S1D_G_H_K_cell_data.tsv.gz"
+  )
+)
+
+
+###############################################################################
+# Fig 1C — cell-type counts
+###############################################################################
+
+fig1c_source <- merged_seurat@meta.data %>%
+  as.data.frame() %>%
+  dplyr::count(
+    assigned_label,
+    name = "cell_count"
+  ) %>%
+  dplyr::arrange(
+    dplyr::desc(cell_count)
+  )
+
+readr::write_tsv(
+  fig1c_source,
+  file.path(
+    source_dir,
+    "Fig1C_celltype_counts.tsv"
+  )
+)
+
+
+###############################################################################
+# Fig 1D — dot plot
+#
+# Export the actual quantities represented by the dots:
+#   pct.exp          = percentage of cells expressing gene
+#   avg.exp          = average expression
+#   avg.exp.scaled   = scaled average expression used for colour
+###############################################################################
+
+# Remove duplicated genes for source-data extraction
+top_markers_source <- unique(as.character(top_markers_sel))
+
+# Check what was duplicated
+top_markers_sel[duplicated(top_markers_sel)]
+
+fig1d_dot <- Seurat::DotPlot(
+  merged_seurat,
+  features = top_markers_source,
+  group.by = "assigned_label"
+)$data %>%
+  as.data.frame() %>%
+  dplyr::rename(
+    cell_type = id,
+    gene = features.plot,
+    pct_expressing = pct.exp,
+    average_expression = avg.exp,
+    scaled_average_expression = avg.exp.scaled
+  ) %>%
+  dplyr::select(
+    cell_type,
+    gene,
+    pct_expressing,
+    average_expression,
+    scaled_average_expression
+  )
+
+readr::write_tsv(
+  fig1d_dot,
+  file.path(source_dir, "Fig1D_dotplot.tsv")
+)
+
+
+###############################################################################
+# Fig S1B and S1E
+#
+# Cell-level QC distributions.
+# Also covers the final nCount_RNA violin at the end of the script.
+###############################################################################
+
+figs1_qc_source <- merged_seurat@meta.data %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("cell_id") %>%
+  dplyr::select(
+    cell_id,
+    study,
+    RNA_snn_res.0.2,
+    percent.mt,
+    nFeature_RNA,
+    nCount_RNA,
+    log10GenesPerUMI
+  )
+
+readr::write_tsv(
+  figs1_qc_source,
+  file.path(
+    source_dir,
+    "FigS1B_E_QC_distributions.tsv.gz"
+  )
+)
+
+
+###############################################################################
+# Fig S1F — number of studies represented in each cluster
+###############################################################################
+
+figs1f_source <- merged_seurat@meta.data %>%
+  as.data.frame() %>%
+  dplyr::group_by(RNA_snn_res.0.2) %>%
+  dplyr::summarise(
+    n_studies = dplyr::n_distinct(study),
+    .groups = "drop"
+  ) %>%
+  dplyr::rename(
+    cluster = RNA_snn_res.0.2
+  )
+
+readr::write_tsv(
+  figs1f_source,
+  file.path(
+    source_dir,
+    "FigS1F_study_counts.tsv"
+  )
+)
+
+
+###############################################################################
+# Fig S1 stacked composition panels
+#
+# Study / Platform / Condition composition by cluster.
+###############################################################################
+
+study_source <- merged_seurat@meta.data %>%
+  as.data.frame() %>%
+  dplyr::count(
+    RNA_snn_res.0.2,
+    study,
+    name = "cell_count"
+  ) %>%
+  dplyr::group_by(RNA_snn_res.0.2) %>%
+  dplyr::mutate(
+    proportion = cell_count / sum(cell_count),
+    variable = "Study",
+    category = as.character(study)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(
+    cluster = RNA_snn_res.0.2,
+    variable,
+    category,
+    cell_count,
+    proportion
+  )
+
+platform_source <- merged_seurat@meta.data %>%
+  as.data.frame() %>%
+  dplyr::count(
+    RNA_snn_res.0.2,
+    Platform,
+    name = "cell_count"
+  ) %>%
+  dplyr::group_by(RNA_snn_res.0.2) %>%
+  dplyr::mutate(
+    proportion = cell_count / sum(cell_count),
+    variable = "Platform",
+    category = as.character(Platform)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(
+    cluster = RNA_snn_res.0.2,
+    variable,
+    category,
+    cell_count,
+    proportion
+  )
+
+condition_source <- merged_seurat@meta.data %>%
+  as.data.frame() %>%
+  dplyr::count(
+    RNA_snn_res.0.2,
+    Condition,
+    name = "cell_count"
+  ) %>%
+  dplyr::group_by(RNA_snn_res.0.2) %>%
+  dplyr::mutate(
+    proportion = cell_count / sum(cell_count),
+    variable = "Condition",
+    category = as.character(Condition)
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(
+    cluster = RNA_snn_res.0.2,
+    variable,
+    category,
+    cell_count,
+    proportion
+  )
+
+figs1_composition_source <- dplyr::bind_rows(
+  study_source,
+  platform_source,
+  condition_source
+)
+
+readr::write_tsv(
+  figs1_composition_source,
+  file.path(
+    source_dir,
+    "FigS1_stacked_composition.tsv"
+  )
+)
+
+
 ###############################################################################
 # sessionInfo()
 ###############################################################################
+

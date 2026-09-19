@@ -1,12 +1,8 @@
 ###############################################################################
-# Project: Pancreas scRNA atlas — Static MI Network and Hypergraph Modules
-# File: Figure7E_FIgureS9E.R
-# Author: Elhadi Iich
-# Date: 2025-08-29
-#
+# Script: lin2C5_SCENIC_regulon_RIS_plot.R
 # Purpose:
 #   - Load SCENIC regulon AUCs and regulonTargetsInfo
-#   - Build TF→target graph weighted by NES
+#   - Build TF -> target graph weighted by NES
 #   - Combine regulon AUC (AUC) and target NES into a composite
 #     Regulon Importance Score (RIS)
 #   - Visualize the GRN highlighting high-confidence TFs and high-RIS hubs
@@ -135,7 +131,8 @@ V(graph)$RIS <- ifelse(
 )
 
 # Label only high-confidence TFs in the top 20% by RIS
-threshold <- quantile(V(graph)$RIS, 0.8)
+threshold <- quantile(regulonMetrics$RIS, 0.8, na.rm = TRUE)
+
 (V(graph)$name %in% high_confidence_TFs & V(graph)$RIS > threshold) %>% sum()
 
 V(graph)$Label <- ifelse(
@@ -150,7 +147,7 @@ V(graph)$isTF <- ifelse(V(graph)$Label %in% high_confidence_TFs, TRUE, FALSE)
 V(graph)$adjustedSize <- ifelse(V(graph)$isTF, V(graph)$RIS, 1e-7)
 
 ###############################################################################
-# 5) Plot GRN with ggraph (KK layout), scaled by RIS, colored by confidence
+# 5) Plot GRN with ggraph (fr layout), scaled by RIS, colored by confidence
 ###############################################################################
 
 library(ggraph)
@@ -166,8 +163,8 @@ ggraph(graph, layout = "fr") +
     size = 4, fontface = "bold", repel = TRUE,
     box.padding = 0.5, segment.size = 0.2
   ) +
-  scale_fill_manual(values = c("High" = "#0baedd",
-                               # "High" = "#53B400",
+  scale_fill_manual(values = c(#"High" = "#0baedd",
+                               "High" = "#53B400",
                                "Low" = "black"), guide = "none") +
   scale_color_identity() +
   scale_size_continuous(name = "Regulon Importance Score (RIS)", range = c(2, 15)) +
@@ -183,3 +180,115 @@ ggraph(graph, layout = "fr") +
 # Optional export:
 # write_graph(graph, file = "graph_lin2C5.graphml", format = "graphml")
 # write_graph(graph, file = "graph_lin3C3.graphml", format = "graphml")
+
+################################################################################
+
+
+###############################################################################
+# SOURCE DATA EXPORT — Figure 7E / Figure S11E RIS network
+###############################################################################
+
+source_dir <- "../SourceData/Figure7_S11"
+dir.create(source_dir, recursive = TRUE, showWarnings = FALSE)
+
+network_name <- "L2_C5"
+# network_name <- "L3_C3"
+
+
+###############################################################################
+# Regulon-level metrics underlying RIS
+###############################################################################
+
+ris_source <- regulonMetrics %>%
+  dplyr::mutate(
+    meanAUC = as.numeric(
+      meanAUC_common[Regulon]
+    ),
+    meanNES = as.numeric(
+      meanNES_common[Regulon]
+    ),
+    high_confidence_TF =
+      Regulon %in% high_confidence_TFs,
+    RIS_threshold_80pct = threshold,
+    labelled =
+      Regulon %in%
+      stats::na.omit(V(graph)$Label)
+  ) %>%
+  dplyr::select(
+    Regulon,
+    meanAUC,
+    meanNES,
+    normAUC,
+    normNES,
+    RIS,
+    high_confidence_TF,
+    RIS_threshold_80pct,
+    labelled
+  )
+
+readr::write_tsv(
+  ris_source,
+  file.path(
+    source_dir,
+    paste0(
+      "Fig7E_S11E_",
+      network_name,
+      "_regulon_RIS.tsv"
+    )
+  )
+)
+
+
+###############################################################################
+# TF-target edges actually used to construct the plotted graph
+###############################################################################
+
+edge_source <- edges %>%
+  dplyr::select(
+    TF,
+    TargetGene,
+    InteractionType,
+    NES
+  )
+
+readr::write_tsv(
+  edge_source,
+  file.path(
+    source_dir,
+    paste0(
+      "Fig7E_S11E_",
+      network_name,
+      "_SCENIC_edges.tsv.gz"
+    )
+  )
+)
+
+
+###############################################################################
+# Node-level plotting attributes
+###############################################################################
+
+node_source <- tibble::tibble(
+  node = V(graph)$name,
+  high_confidence = V(graph)$HighConfidence,
+  RIS = V(graph)$RIS,
+  label = V(graph)$Label,
+  is_TF_highlighted = V(graph)$isTF,
+  adjusted_size = V(graph)$adjustedSize
+)
+
+readr::write_tsv(
+  node_source,
+  file.path(
+    source_dir,
+    paste0(
+      "Fig7E_S11E_",
+      network_name,
+      "_nodes.tsv"
+    )
+  )
+)
+
+################################################################################
+# sessionInfo()
+################################################################################
