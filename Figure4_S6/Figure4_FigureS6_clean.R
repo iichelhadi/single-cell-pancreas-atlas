@@ -1469,18 +1469,19 @@ library(officer)
 
 # Figure 4P donor table
 donor_table <- tibble::tribble(
-  ~`Donor ID`, ~`Age (years)`, ~Gender, ~`BMI (kg/m²)`, ~`Disease status`, ~`Years of diabetes`,
-  "ND00202",   55,             "F",     25.00,          "ND",              "–",
-  "ND09258",   96,             "F",     21.46,          "ND",              "–",
-  "ND11183",   46,             "F",     22.90,          "ND",              "–",
-  "ND13069",   46,             "M",     27.10,          "ND",              "–",
-  "ND15112",   70,             "F",     42.20,          "T2D",             "6",
-  "ND14070",   66,             "M",     30.40,          "T2D",             "18",
-  "ND09756",   62,             "M",     32.69,          "T2D",             "20",
-  "ND18553",   67,             "M",     26.40,          "T2D",             "30",
-  "ND08838",   82,             "F",     31.27,          "T2D",             "32"
+  ~`Donor ID`, ~`Age (years)`, ~Gender, ~`BMI (kg/m²)`, ~`Disease status`, ~`Years of diabetes`, ~CPA1, ~PRSS1,
+  "ND00202",   55,             "F",     25.00,          "ND",              "–",                  "✓",   "✓",
+  "ND09258",   96,             "F",     21.46,          "ND",              "–",                  "✓",   "✓",
+  "ND11183",   46,             "F",     22.90,          "ND",              "–",                  "✓",   "✓",
+  "ND13069",   46,             "M",     27.10,          "ND",              "–",                  "✓",   "✓",
+  "ND13819",   NA,             NA,      NA,             "ND",              "–",                  "✓",   "–",
+  "ND139817",  NA,             NA,      NA,             "T2D",             "4",                  "✓",   "–",
+  "ND15112",   70,             "F",     42.20,          "T2D",             "6",                  "✓",   "✓",
+  "ND14070",   66,             "M",     30.40,          "T2D",             "18",                 "✓",   "✓",
+  "ND09756",   62,             "M",     32.69,          "T2D",             "20",                 "✓",   "✓",
+  "ND18553",   67,             "M",     26.40,          "T2D",             "30",                 "✓",   "✓",
+  "ND08838",   82,             "F",     31.27,          "T2D",             "32",                 "✓",   "✓"
 )
-
 
 ft <- flextable::flextable(donor_table) %>%
   flextable::theme_box() %>%
