@@ -13,3 +13,4 @@ renv/library/
 
 # Keep raw/processed data out of the repository; distribute via DOI instead
 data/*
+backup/

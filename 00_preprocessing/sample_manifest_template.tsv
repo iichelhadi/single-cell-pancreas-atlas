@@ -1,0 +1,2 @@
+sample_id	cellranger_outs	output_dir
+example_sample	/path/to/CellRanger/outs	/path/to/output/soupX_example_sample_filt
