@@ -60,7 +60,7 @@ Some revised analyses are implemented in dedicated scripts within the correspond
 
 Processed single-cell objects and computational source data underlying the manuscript figures are available from Zenodo:
 
-DOI: 10.5281/zenodo.22767582
+[DOI: 10.5281/zenodo.22767582](https://doi.org/10.5281/zenodo.22767582)
 
 The public scRNA-seq datasets used in the study are available from GEO and ENA under the accession numbers reported in the manuscript.
 
