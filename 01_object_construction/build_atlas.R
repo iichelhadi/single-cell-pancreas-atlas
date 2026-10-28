@@ -1,8 +1,6 @@
 #!/usr/bin/env Rscript
 # Build the merged scRNA-seq atlas: per-sample QC + DoubletFinder, merge,
 # attach donor metadata, drop excluded studies.
-#
-# Edit the CONFIG block below, then run: Rscript build_atlas.R
 
 suppressPackageStartupMessages({
   library(Seurat)
