@@ -959,11 +959,11 @@ res_filt <- left_join(res_filt, perc_expr,
 
 res_filt_2 <- res_filt
 res_filt_2$change <- ifelse((res_filt_2$log2FoldChange > 1 &
-                               round(res_filt_2$padj, 2) <= 0.05),
+                               res_filt_2$padj <= 0.05 ),
                             'UP',
                             ifelse((
                               res_filt_2$log2FoldChange < -1 &
-                                round(res_filt_2$padj, 2) <= 0.05
+                                res_filt_2$padj <= 0.05
                             ), 'DOWN', 'NS'))
 
 ### Figure 4L

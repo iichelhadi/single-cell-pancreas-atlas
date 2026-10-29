@@ -121,8 +121,8 @@ res_filt <- as.data.frame(res) %>%
 
 res_filt_2 <- res_filt
 
-res_filt_2$change <- ifelse(res_filt_2$log2FoldChange > 1 & round(res_filt_2$padj, 2) <= 0.05, 'UP',
-                            ifelse(res_filt_2$log2FoldChange < -1 & round(res_filt_2$padj, 2) <= 0.05, 'DOWN', ''))
+res_filt_2$change <- ifelse(res_filt_2$log2FoldChange > 1 & res_filt_2$padj <= 0.05, 'UP',
+                            ifelse(res_filt_2$log2FoldChange < -1 & res_filt_2$padj <= 0.05, 'DOWN', ''))
 
 fig5A_source <- res_filt_2
 
@@ -173,8 +173,8 @@ res_filt <- as.data.frame(res) %>%
 
 
 res_filt_2 <- res_filt
-res_filt_2$change <- ifelse(res_filt_2$log2FoldChange > 1 & round(res_filt_2$padj, 2) <= 0.05, 'UP',
-                            ifelse(res_filt_2$log2FoldChange < -1 & round(res_filt_2$padj, 2) <= 0.05, 'DOWN', ''))
+res_filt_2$change <- ifelse(res_filt_2$log2FoldChange > 1 & res_filt_2$padj <= 0.05, 'UP',
+                            ifelse(res_filt_2$log2FoldChange < -1 & res_filt_2$padj <= 0.05, 'DOWN', ''))
 
 fig5B_source <- res_filt_2
 
@@ -224,8 +224,8 @@ res_filt <- as.data.frame(res) %>%
   left_join(perc_expr, by = c('genes'='feature_id'))
 
 res_filt_2 <- res_filt
-res_filt_2$change <- ifelse(res_filt_2$log2FoldChange > 1 & round(res_filt_2$padj, 2) <= 0.05, 'UP',
-                            ifelse(res_filt_2$log2FoldChange < -1 & round(res_filt_2$padj, 2) <= 0.05, 'DOWN', ''))
+res_filt_2$change <- ifelse(res_filt_2$log2FoldChange > 1 & res_filt_2$padj <= 0.05, 'UP',
+                            ifelse(res_filt_2$log2FoldChange < -1 & res_filt_2$padj <= 0.05, 'DOWN', ''))
 
 fig5C_source <- res_filt_2
 

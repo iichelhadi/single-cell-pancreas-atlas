@@ -42,6 +42,35 @@ metadata <- lin2_obj@meta.data %>%
     Condition = as.character(Condition)
   )
 
+################################################################################
+# Exclude studies without verifiable biological donor IDs (Figure 4O only)
+################################################################################
+
+excluded_studies <- c("GSE98887", "GSE124742")
+
+excluded_cell_counts <- metadata %>%
+  dplyr::filter(Study %in% excluded_studies |
+                  orig.ident %in% excluded_studies) %>%
+  dplyr::count(Study, orig.ident, name = "n_cells_excluded")
+
+message("Figure 4O: excluding ", sum(excluded_cell_counts$n_cells_excluded),
+        " cells lacking verified donor IDs.")
+print(excluded_cell_counts)
+
+metadata <- metadata %>%
+  dplyr::filter(!Study %in% excluded_studies,
+                !orig.ident %in% excluded_studies)
+
+stopifnot(
+  nrow(metadata) > 0,
+  !any(metadata$Study %in% excluded_studies),
+  !any(metadata$orig.ident %in% excluded_studies)
+)
+
+readr::write_tsv(
+  excluded_cell_counts,
+  "revision_out/C2_C5_excluded_study_cell_counts.tsv"
+)
 
 ################################################################################
 # Read source annotation mappings
