@@ -16,7 +16,6 @@
 #   - DEGsVsC3.RData
 #   - lin2.beta.reintegrated.rds
 #   - sce_lin2.rds
-#   - /beta/lineage2_reintegration_test/SCENIC/Cluster3/int/*Rds
 ################################################################################
 
 suppressPackageStartupMessages({
@@ -241,6 +240,14 @@ print(p_5C)
 # =============================================================================
 # Section 4 — Figure 5D: DEG Venn (C4vC3, C3vC2, C3vC5)
 # =============================================================================
+
+## Fig 5D: up in C3 vs C4, down in C2 vs C3, down in C5 vs C3 (padj <= 0.05, |log2FC| > 1)
+C4vC3 <- fig5A_source %>% dplyr::filter(change == 'UP')
+C3vC2 <- fig5B_source %>% dplyr::filter(change == 'DOWN')
+C3vC5 <- fig5C_source %>% dplyr::filter(change == 'DOWN')
+save(C4vC3, C3vC2, C3vC5, file = 'DEGsVsC3.RData')
+Reduce(intersect, list(C4vC3$genes, C3vC2$genes, C3vC5$genes))   # expect CDKN2A, FSTL4, IGFBP5, PRG4
+
 load('DEGsVsC3.RData')
 # Expecting objects: C4vC3, C3vC2, C3vC5 with $genes
 x <- list(
@@ -755,6 +762,9 @@ trajectory_source <- lapply(
 trajectory_source <- trajectory_source %>%
   dplyr::mutate(
     panel = dplyr::case_when(
+      gene %in% c("IGFBP5", "FSTL4", "CDKN2A"
+      ) ~ "Figure5E_and_S8B",
+         
       gene %in% c(
         "PRG4", "FSTL4", "IGFBP5", "CDKN2A"
       ) ~ "Figure5E",
@@ -772,15 +782,8 @@ trajectory_source <- trajectory_source %>%
       gene %in% c(
         "SLC30A8", "GAD2", "NEUROD1", "MAFA",
         "ABCC8", "DNAJC15", "PCSK1", "LMO1"
-      ) ~ "FigureS8C",
-      
-      # genes appearing in >1 panel
-      gene %in% c(
-        "IGFBP5", "FSTL4", "CDKN2A"
-      ) ~ "Figure5E_and_S8B",
-      
-      TRUE ~ NA_character_
-    )
+      ) ~ "FigureS8C"
+     
   )
 
 
@@ -806,7 +809,7 @@ scenic_source_files <- c(
   "Figure5H_regulon_threshold_sensitivity.tsv",
   "Figure5H_regulon_robustness_summary.tsv",
   "Figure5H_sig70_regulons_across_thresholds.tsv",
-  "Table_S15_SCENIC_regulon_robustness.tsv"
+  "Table_S16_SCENIC_regulon_robustness.tsv"
 )
 
 for (f in scenic_source_files) {

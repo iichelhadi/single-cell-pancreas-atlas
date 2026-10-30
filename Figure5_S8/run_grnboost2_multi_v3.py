@@ -47,7 +47,7 @@ def validate_output(path: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n-runs", type=int, default=20)
+    parser.add_argument("--n-runs", type=int, default=50)
     parser.add_argument("--seed-start", type=int, default=1000)
     parser.add_argument("--workers", type=int, default=16)
     parser.add_argument("--calibrate", action="store_true")

@@ -172,10 +172,18 @@ join_check <- metadata %>%
 # Construct fallback metadata signatures
 ################################################################################
 
+#! CODE-4: same five studies as Figure2I_S3F_HbA1c_donor_analysis_clean.R,
+#! matched on Study (orig.ident is study-level for some of these datasets)
 fallback_studies <- c(
   "GSE98887",
-  "GSE124742"
+  "GSE124742",
+  "EMTAB5061",
+  "GSE86469",
+  "GSE81547"
 )
+
+## Cells from metadata-signature studies remaining after the exclusion above
+print(table(metadata$Study[metadata$Study %in% fallback_studies]))
 
 signature_value <- function(x) {
   x <- as.character(x)
@@ -221,8 +229,8 @@ metadata <- metadata %>%
         annotated_biosample
       ),
       
-            orig.ident %in% fallback_studies ~ paste0(
-        orig.ident,
+            Study %in% fallback_studies ~ paste0(
+        Study,
         "::metadata::",
         donor_signature
       ),

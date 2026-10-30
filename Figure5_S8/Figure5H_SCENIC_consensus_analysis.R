@@ -1,6 +1,8 @@
 ################################################################################
 # Project: scRNA beta cell atlas — Fig 5H SCENIC consensus analysis
-# File: Fig5H_SCENIC_consensus_analysis.R
+# File: Figure5H_SCENIC_consensus_analysis.R
+#! output names changed from Fig5H_* to Figure5H_* to match Figure5H_SCENIC_figures.R
+#! and the source-data collection in Figure5_FigureS8_clean.R
 # Author: Elhadi Iich
 #
 # Description:
@@ -46,7 +48,7 @@ close_loom(loom)
 cellInfo <- readRDS("cellInfo_slingshotBranchID.Rds")
 
 donor_obj <- readRDS(
-  "./revision/Fig4_S6/lin2.beta.reintegrated.rds"
+  "./Fig4_S6/lin2.beta.reintegrated.rds"
 )
 
 meta <- donor_obj@meta.data
@@ -325,7 +327,7 @@ stats_tbl <- dplyr::bind_rows(
 
 readr::write_tsv(
   stats_tbl,
-  "Fig5H_regulon_donor_mixed_model.tsv"
+  "Figure5H_regulon_donor_mixed_model.tsv"
 )
 
 cat("\nTop results:\n")
@@ -484,7 +486,7 @@ threshold_results <- dplyr::bind_rows(
 
 readr::write_tsv(
   threshold_results,
-  "Fig5H_regulon_threshold_sensitivity.tsv"
+  "Figure5H_regulon_threshold_sensitivity.tsv"
 )
 
 
@@ -517,7 +519,7 @@ print(
 
 readr::write_tsv(
   sig70_threshold_check,
-  "Fig5H_sig70_regulons_across_thresholds.tsv"
+  "Figure5H_sig70_regulons_across_thresholds.tsv"
 )
 
 ################################################################################
@@ -544,7 +546,7 @@ print(robustness_summary, n = Inf)
 
 readr::write_tsv(
   robustness_summary,
-  "Fig5H_regulon_robustness_summary.tsv"
+  "Figure5H_regulon_robustness_summary.tsv"
 )
 
 ################################################################################
@@ -603,7 +605,7 @@ fig5h_donor_data <- lapply(
 
 readr::write_tsv(
   fig5h_donor_data,
-  "Fig5H_regulon_donor_data.tsv"
+  "Figure5H_regulon_donor_data.tsv"
 )
 
 print(
@@ -683,7 +685,7 @@ print(
 
 readr::write_tsv(
   pairwise_results,
-  "Fig5H_pairwise_mixed_model.tsv"
+  "Figure5H_pairwise_mixed_model.tsv"
 )
 
 ################################################################################

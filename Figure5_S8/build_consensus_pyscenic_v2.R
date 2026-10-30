@@ -17,7 +17,7 @@
 #   consensus_grn_80.tsv
 #   threshold_comparison.tsv       edge counts per threshold (regulon/target
 #                                  overlap filled in after ctx/aucell — see
-#                                  compare_thresholds_post_ctx.R)
+#                                  compare_thresholds_post_ctx.py)
 ###############################################################################
 
 suppressPackageStartupMessages({

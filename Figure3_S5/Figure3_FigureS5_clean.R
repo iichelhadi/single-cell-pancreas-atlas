@@ -624,8 +624,13 @@ colnames(mat2_z) <- colnames(mat2_ord)
 # saveRDS(mat2_z, "mat2_z.rds") ### mat2_z generated from RNA assay for module detection and SCT for heatmap
 
 # 6) Cluster rows -------------------------------------------------------
-# ck1 <- clusterData_custom(exp = mat1_z, scaleData = TRUE, min.std = 0)
-# ck2 <- clusterData_custom(exp = mat2_z, scaleData = TRUE, min.std = 0)
+#! enabled: generate the clustering once if the saved objects are absent
+if (!file.exists("ck1_branched_heatmap.rds")) {
+  ck1 <- clusterData_custom(exp = mat1_z, scaleData = TRUE, min.std = 0)
+  ck2 <- clusterData_custom(exp = mat2_z, scaleData = TRUE, min.std = 0)
+  saveRDS(ck1, "ck1_branched_heatmap.rds")
+  saveRDS(ck2, "ck2_branched_heatmap.rds")
+}
 
 
 # 3) Load precomputed clustering results

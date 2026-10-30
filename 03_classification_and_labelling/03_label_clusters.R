@@ -5,7 +5,7 @@ suppressPackageStartupMessages(library(Seurat))
 
 # ---- CONFIG -----------------------------------------------------------------
 in_rds  <- "output/scRNA_integrated_harmony_classified_20_20.rds"
-out_rds <- "output/scRNA_integrated_harmony_classified"
+out_rds <- "output/scRNA_integrated_harmony_classified.rds"  #! added .rds: downstream scripts read scRNA_integrated_harmony_classified.rds
 out_tsv <- "output/scPred_meta_data_res0.2.tsv"
 
 # Labels in cluster order (clusters 1-11 at RNA_snn_res.0.2)
